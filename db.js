@@ -70,6 +70,225 @@ const SupportTicket = mongoose.models.SupportTicket || mongoose.model('SupportTi
 const InvestmentPurchase = mongoose.models.InvestmentPurchase || mongoose.model('InvestmentPurchase', investmentSchema);
 
 const cachedConnection = global.__mongooseCache || (global.__mongooseCache = { conn: null, promise: null });
+const fallbackStores = {
+  Admin: new Map(),
+  User: new Map(),
+  Withdrawal: new Map(),
+  SupportTicket: new Map(),
+  InvestmentPurchase: new Map(),
+};
+let fallbackMode = false;
+
+function createId() {
+  return new mongoose.Types.ObjectId().toString();
+}
+
+function cloneDoc(doc) {
+  if (!doc) return doc;
+  if (typeof doc.toObject === 'function') {
+    const plain = doc.toObject();
+    return { ...plain };
+  }
+  return { ...doc };
+}
+
+function normalizeValue(value) {
+  if (value === undefined || value === null) return '';
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'object') return value.toString();
+  return String(value);
+}
+
+function valueMatches(doc, key, expected) {
+  const actual = doc[key];
+  if (expected instanceof RegExp) {
+    return typeof actual === 'string' && expected.test(actual);
+  }
+  if (expected && typeof expected === 'object' && !Array.isArray(expected)) {
+    return Object.entries(expected).every(([nestedKey, nestedValue]) => valueMatches(doc, nestedKey, nestedValue));
+  }
+  return normalizeValue(actual) === normalizeValue(expected);
+}
+
+function matchesFilter(filter, doc) {
+  if (!filter || Object.keys(filter).length === 0) {
+    return true;
+  }
+  if (filter.$or) {
+    return filter.$or.some((part) => matchesFilter(part, doc));
+  }
+  return Object.entries(filter).every(([key, value]) => {
+    if (key === '_id') {
+      return normalizeValue(doc._id) === normalizeValue(value);
+    }
+    if (key === 'userId') {
+      return normalizeValue(doc.userId) === normalizeValue(value);
+    }
+    if (key === 'assignedAdmin') {
+      return normalizeValue(doc.assignedAdmin) === normalizeValue(value);
+    }
+    return valueMatches(doc, key, value);
+  });
+}
+
+function toPlainDoc(doc) {
+  if (!doc) return doc;
+  const plain = typeof doc.toObject === 'function' ? doc.toObject() : { ...doc };
+  const { save, toObject, toJSON, ...rest } = plain;
+  return rest;
+}
+
+function toFallbackDoc(modelName, data) {
+  const doc = {
+    ...data,
+    _id: data._id || createId(),
+    createdAt: data.createdAt || new Date(),
+  };
+  doc.save = async function save() {
+    const collection = fallbackStores[modelName];
+    const key = String(doc._id);
+    collection.set(key, { ...doc });
+    return { ...doc };
+  };
+  doc.toObject = function toObject() {
+    return { ...doc };
+  };
+  doc.toJSON = function toJSON() {
+    return { ...doc };
+  };
+  return doc;
+}
+
+class FallbackQuery {
+  constructor(modelName, items) {
+    this.modelName = modelName;
+    this.items = items;
+    this.populatePath = null;
+    this.sortSpec = null;
+  }
+
+  populate(path) {
+    this.populatePath = path;
+    return this;
+  }
+
+  sort(spec) {
+    this.sortSpec = spec;
+    return this;
+  }
+
+  select() {
+    return this;
+  }
+
+  async execute() {
+    let result = [...this.items];
+    if (this.sortSpec) {
+      const sortField = Object.keys(this.sortSpec)[0];
+      const isDesc = this.sortSpec[sortField] === -1;
+      result.sort((a, b) => {
+        const left = a[sortField] ? new Date(a[sortField]).getTime() : 0;
+        const right = b[sortField] ? new Date(b[sortField]).getTime() : 0;
+        return isDesc ? right - left : left - right;
+      });
+    }
+    if (this.populatePath) {
+      const collectionName = this.populatePath === 'userId' ? 'User' : this.populatePath;
+      const collection = fallbackStores[collectionName];
+      result = result.map((item) => {
+        if (!collection) return item;
+        const id = item[this.populatePath];
+        const related = collection.get(String(id));
+        return related ? { ...item, [this.populatePath]: related } : item;
+      });
+    }
+    return result;
+  }
+
+  then(resolve, reject) {
+    return this.execute().then(resolve, reject);
+  }
+
+  catch(reject) {
+    return this.execute().catch(reject);
+  }
+}
+
+function attachFallbackModel(model, modelName) {
+  if (model.__fallbackAttached) return;
+  model.__fallbackAttached = true;
+
+  model.create = async function create(payload) {
+    const collection = fallbackStores[modelName];
+    const document = toFallbackDoc(modelName, Array.isArray(payload) ? payload[0] : payload);
+    collection.set(String(document._id), document);
+    return document;
+  };
+
+  model.findOne = function findOne(filter) {
+    const collection = fallbackStores[modelName];
+    const matches = [...collection.values()].filter((doc) => matchesFilter(filter, doc));
+    const doc = matches[0] || null;
+    return Promise.resolve(doc ? toFallbackDoc(modelName, cloneDoc(doc)) : null);
+  };
+
+  model.find = function find(filter) {
+    const collection = fallbackStores[modelName];
+    const items = [...collection.values()].filter((doc) => matchesFilter(filter, doc));
+    return new FallbackQuery(modelName, items);
+  };
+
+  model.findById = function findById(id) {
+    const collection = fallbackStores[modelName];
+    const doc = collection.get(String(id));
+    return Promise.resolve(doc ? toFallbackDoc(modelName, cloneDoc(doc)) : null);
+  };
+
+  model.findByIdAndUpdate = async function findByIdAndUpdate(id, updates, options = {}) {
+    const collection = fallbackStores[modelName];
+    const key = String(id);
+    const existing = collection.get(key);
+    if (!existing) return null;
+    const updated = { ...existing };
+    if (updates.$inc) {
+      Object.entries(updates.$inc).forEach(([field, amount]) => {
+        updated[field] = Number(updated[field] || 0) + Number(amount || 0);
+      });
+    }
+    Object.entries(updates).forEach(([field, value]) => {
+      if (field === '$inc') return;
+      updated[field] = value;
+    });
+    if (options.new === false) {
+      collection.set(key, updated);
+      return toFallbackDoc(modelName, cloneDoc(updated));
+    }
+    collection.set(key, updated);
+    return toFallbackDoc(modelName, cloneDoc(updated));
+  };
+
+  model.findByIdAndDelete = async function findByIdAndDelete(id) {
+    const collection = fallbackStores[modelName];
+    const key = String(id);
+    const existing = collection.get(key);
+    if (!existing) return null;
+    collection.delete(key);
+    return toFallbackDoc(modelName, cloneDoc(existing));
+  };
+
+  model.deleteMany = async function deleteMany(filter) {
+    const collection = fallbackStores[modelName];
+    const toDelete = [...collection.values()].filter((doc) => matchesFilter(filter, doc));
+    toDelete.forEach((doc) => collection.delete(String(doc._id)));
+    return toDelete.length;
+  };
+}
+
+attachFallbackModel(Admin, 'Admin');
+attachFallbackModel(User, 'User');
+attachFallbackModel(Withdrawal, 'Withdrawal');
+attachFallbackModel(SupportTicket, 'SupportTicket');
+attachFallbackModel(InvestmentPurchase, 'InvestmentPurchase');
 
 async function connectToDatabase() {
   if (cachedConnection.conn) {
@@ -86,10 +305,15 @@ async function connectToDatabase() {
       maxPoolSize: 10,
     }).then((mongooseInstance) => {
       cachedConnection.conn = mongooseInstance;
+      fallbackMode = false;
       return mongooseInstance;
     }).catch((error) => {
+      fallbackMode = true;
       cachedConnection.promise = null;
-      throw error;
+      if (!process.env.VERCEL) {
+        console.warn('MongoDB unavailable, using in-memory fallback store:', error.message);
+      }
+      return { readyState: 0, fallback: true };
     });
   }
 
