@@ -17,14 +17,26 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-          document.querySelectorAll('a[href], button[data-ref-link]').forEach((element) => {
-            const targetHref = element.getAttribute('href');
-            if (!targetHref || targetHref.startsWith('http') || targetHref.startsWith('#')) return;
-            const storedRef = localStorage.getItem('refCode');
-            if (storedRef) {
+          const storedRef = localStorage.getItem('refCode');
+          if (!storedRef) return;
+
+          document.querySelectorAll('a[data-ref-link], button[data-ref-link]').forEach((element) => {
+            if (element.tagName === 'A') {
+              const targetHref = element.getAttribute('href');
+              if (!targetHref || targetHref.startsWith('http') || targetHref.startsWith('#')) return;
               const nextUrl = new URL(targetHref, window.location.origin);
               nextUrl.searchParams.set('ref', storedRef);
               element.setAttribute('href', nextUrl.pathname + nextUrl.search);
+              return;
+            }
+
+            if (element.tagName === 'BUTTON') {
+              const targetHref = element.dataset.href || '/signup.html';
+              element.addEventListener('click', () => {
+                const nextUrl = new URL(targetHref, window.location.origin);
+                nextUrl.searchParams.set('ref', storedRef);
+                window.location.href = nextUrl.pathname + nextUrl.search;
+              });
             }
           });
         });
