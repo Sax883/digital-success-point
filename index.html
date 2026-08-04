@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Digital Success Point | Broker & Affiliate Investment Platform</title>
+    <meta name="description" content="A professional broker and affiliate investment platform for wealth growth, secure withdrawals, and premium client support." />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-slate-950 text-slate-100">
+    <script>
+      (function () {
+        const params = new URLSearchParams(window.location.search);
+        const refValue = params.get('ref');
+        if (refValue) {
+          localStorage.setItem('refCode', refValue);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+          document.querySelectorAll('a[href], button[data-ref-link]').forEach((element) => {
+            const targetHref = element.getAttribute('href');
+            if (!targetHref || targetHref.startsWith('http') || targetHref.startsWith('#')) return;
+            const storedRef = localStorage.getItem('refCode');
+            if (storedRef) {
+              const nextUrl = new URL(targetHref, window.location.origin);
+              nextUrl.searchParams.set('ref', storedRef);
+              element.setAttribute('href', nextUrl.pathname + nextUrl.search);
+            }
+          });
+        });
+      })();
+    </script>
+    <header class="border-b border-slate-800/80 bg-slate-950/90 backdrop-blur">
+      <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
+        <a href="/" class="flex items-center gap-3">
+          <img src="./image/logo.jpeg" alt="Digital Success Point logo" class="h-12 w-12 rounded-full object-cover shadow-lg" />
+          <div>
+            <p class="text-lg font-semibold">Digital Success Point</p>
+            <p class="text-sm text-slate-400">Brokerage & Affiliate Capital</p>
+          </div>
+        </a>
+        <nav class="hidden items-center gap-6 text-sm font-medium md:flex">
+          <a href="#about" class="text-slate-300 hover:text-white">About</a>
+          <a href="#plans" class="text-slate-300 hover:text-white">Programs</a>
+          <a href="#contact" class="text-slate-300 hover:text-white">Contact</a>
+          <a href="/login.html" class="rounded-full border border-cyan-400/40 px-4 py-2 text-cyan-300 hover:bg-cyan-500/10">Login</a>
+          <a href="/signup.html" class="rounded-full bg-cyan-500 px-4 py-2 text-slate-950 hover:bg-cyan-400" data-ref-link="true">Open Account</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="mx-auto grid max-w-7xl items-center gap-10 px-6 py-20 lg:grid-cols-2 lg:px-8">
+        <div>
+          <span class="rounded-full border border-cyan-400/40 bg-cyan-500/10 px-3 py-1 text-sm font-medium text-cyan-300">Trusted global investment platform</span>
+          <h1 class="mt-6 text-4xl font-semibold leading-tight sm:text-5xl">Institutional-Grade Digital Asset &amp; Affiliate Management</h1>
+          <p class="mt-6 max-w-xl text-lg text-slate-400">Empowering global investors through automated yield strategies, direct affiliate commissions, and transparent portfolio tracking. Built on reliable infrastructure designed for real-time visual tracking.</p>
+          <div class="mt-8 flex flex-wrap gap-4">
+            <a href="/signup.html" class="rounded-full bg-cyan-500 px-6 py-3 font-semibold text-slate-950 transition hover:bg-cyan-400" data-ref-link="true">Start Investing</a>
+            <a href="#plans" class="rounded-full border border-slate-700 px-6 py-3 font-semibold text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300">View Programs</a>
+          </div>
+          <div class="mt-8 flex flex-wrap gap-6 text-sm text-slate-400">
+            <div><span class="font-semibold text-white">$200</span> instant welcome bonus</div>
+            <div><span class="font-semibold text-white">24/7</span> support oversight</div>
+            <div><span class="font-semibold text-white">Secure</span> payout system</div>
+          </div>
+        </div>
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-4 shadow-2xl shadow-cyan-950/30">
+          <img src="./image/WhatsApp Image 2026-08-04 at 2.12.13 AM.jpeg" alt="Professional investment team" class="h-[430px] w-full rounded-2xl object-cover" />
+        </div>
+      </section>
+
+      <section id="about" class="mx-auto max-w-7xl px-6 py-16 lg:px-8">
+        <div class="grid gap-8 rounded-3xl border border-slate-800 bg-slate-900/60 p-8 lg:grid-cols-[1.2fr_0.8fr]">
+          <div>
+            <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Why clients choose us</p>
+            <h2 class="mt-3 text-3xl font-semibold">A premium platform designed for confident wealth growth.</h2>
+            <p class="mt-4 text-slate-400">Digital Success Point combines disciplined investment management, affiliate reward mechanics, and responsive client support into one streamlined experience.</p>
+          </div>
+          <div class="grid gap-4 text-sm text-slate-300 sm:grid-cols-2">
+            <div class="rounded-2xl border border-slate-800 p-4">
+              <h3 class="font-semibold text-white">Institutional-grade execution</h3>
+              <p class="mt-2 text-slate-400">Professional portfolio monitoring and structured growth planning.</p>
+            </div>
+            <div class="rounded-2xl border border-slate-800 p-4">
+              <h3 class="font-semibold text-white">Affiliate incentives</h3>
+              <p class="mt-2 text-slate-400">Earn and support through a transparent referral system.</p>
+            </div>
+            <div class="rounded-2xl border border-slate-800 p-4">
+              <h3 class="font-semibold text-white">Fast support routing</h3>
+              <p class="mt-2 text-slate-400">Live ticketing and admin-backed messaging for every client.</p>
+            </div>
+            <div class="rounded-2xl border border-slate-800 p-4">
+              <h3 class="font-semibold text-white">Secure withdrawals</h3>
+              <p class="mt-2 text-slate-400">Track payout requests and confirmations from a single dashboard.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mx-auto max-w-7xl px-6 pb-16 lg:px-8">
+        <div class="grid gap-8 lg:grid-cols-3">
+          <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+            <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Global operations</p>
+            <h3 class="mt-3 text-xl font-semibold">Institutional-Grade Digital Asset &amp; Affiliate Management</h3>
+            <p class="mt-3 text-sm text-slate-400">Empowering global investors through automated yield strategies, direct affiliate commissions, and transparent portfolio tracking. Built on reliable infrastructure designed for real-time visual tracking.</p>
+          </div>
+          <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+            <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Portfolio intelligence</p>
+            <h3 class="mt-3 text-xl font-semibold">Real-Time Portfolio Intelligence at Your Fingertips</h3>
+            <p class="mt-3 text-sm text-slate-400">Monitor live earnings, active investment tiers, and affiliate commission growth seamlessly from an intuitive client portal. Track historical earnings with continuous data updates.</p>
+          </div>
+          <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+            <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Strategy support</p>
+            <h3 class="mt-3 text-xl font-semibold">24/7 Dedicated Account &amp; Strategy Support</h3>
+            <p class="mt-3 text-sm text-slate-400">Direct communication channels between clients and fund administrators ensure rapid dispute resolution, seamless withdrawal processing, and portfolio guidance.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="plans" class="mx-auto max-w-7xl px-6 py-16 lg:px-8">
+        <div class="mb-10 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Investment tiers</p>
+            <h2 class="text-3xl font-semibold">Flexible investment programs for every stage of growth.</h2>
+          </div>
+          <p class="max-w-xl text-slate-400">Choose from our premium packages with dynamic management, rewards, and clear payout visibility.</p>
+        </div>
+        <div class="grid gap-6 lg:grid-cols-3">
+          <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
+            <h3 class="text-xl font-semibold">Starter Capital</h3>
+            <p class="mt-3 text-sm text-slate-400">Ideal for first-time investors seeking structured portfolio acceleration.</p>
+            <div class="mt-6 text-4xl font-semibold text-cyan-400">$500+</div>
+            <ul class="mt-6 space-y-3 text-sm text-slate-300">
+              <li>• Daily monitoring</li>
+              <li>• Affiliate bonus pathway</li>
+              <li>• Support ticket access</li>
+            </ul>
+          </div>
+          <div class="rounded-3xl border border-cyan-500/40 bg-cyan-500/10 p-8 shadow-xl shadow-cyan-900/20">
+            <h3 class="text-xl font-semibold">Growth Partner</h3>
+            <p class="mt-3 text-sm text-slate-400">For ambitious investors seeking enhanced returns and stronger market exposure.</p>
+            <div class="mt-6 text-4xl font-semibold text-cyan-400">$2,500+</div>
+            <ul class="mt-6 space-y-3 text-sm text-slate-300">
+              <li>• Premium portfolio insights</li>
+              <li>• Higher affiliate rewards</li>
+              <li>• Priority payout support</li>
+            </ul>
+          </div>
+          <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
+            <h3 class="text-xl font-semibold">Elite Wealth</h3>
+            <p class="mt-3 text-sm text-slate-400">Tailored for high-value clients seeking advanced administration and executive support.</p>
+            <div class="mt-6 text-4xl font-semibold text-cyan-400">$10,000+</div>
+            <ul class="mt-6 space-y-3 text-sm text-slate-300">
+              <li>• Executive account management</li>
+              <li>• Dedicated affiliate structuring</li>
+              <li>• Expedited confirmation workflows</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="mx-auto max-w-7xl px-6 py-16 lg:px-8">
+        <div class="grid gap-6 lg:grid-cols-2">
+          <div class="space-y-4">
+            <img src="./image/WhatsApp Image 2026-08-04 at 2.12.14 AM (1).jpeg" alt="Investment insight dashboard" class="h-72 w-full rounded-3xl object-cover" />
+            <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+              <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Portfolio intelligence</p>
+              <h3 class="mt-3 text-xl font-semibold">Real-Time Portfolio Intelligence at Your Fingertips</h3>
+              <p class="mt-3 text-sm text-slate-400">Monitor live earnings, active investment tiers, and affiliate commission growth seamlessly from an intuitive client portal. Track historical earnings with continuous data updates.</p>
+            </div>
+          </div>
+          <div class="space-y-4">
+            <img src="./image/WhatsApp Image 2026-08-04 at 2.12.14 AM (2).jpeg" alt="Affiliate growth workspace" class="h-72 w-full rounded-3xl object-cover" />
+            <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+              <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Strategy support</p>
+              <h3 class="mt-3 text-xl font-semibold">24/7 Dedicated Account &amp; Strategy Support</h3>
+              <p class="mt-3 text-sm text-slate-400">Direct communication channels between clients and fund administrators ensure rapid dispute resolution, seamless withdrawal processing, and portfolio guidance.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="contact" class="mx-auto max-w-7xl px-6 pb-20 lg:px-8">
+        <div class="grid gap-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-8 lg:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Contact us</p>
+            <h2 class="mt-3 text-3xl font-semibold">Talk with the Digital Success Point team.</h2>
+            <p class="mt-4 text-slate-400">Reach our headquarters in the United States for account guidance, program questions, or support escalations.</p>
+            <div class="mt-6 space-y-3 text-sm text-slate-300">
+              <p><span class="font-semibold text-white">Email:</span> support@digitalsuccesspoint.com</p>
+              <p><span class="font-semibold text-white">Address:</span> 2500 Market Street, Suite 400, Philadelphia, PA 19103, USA</p>
+            </div>
+          </div>
+          <div>
+            <iframe title="Digital Success Point HQ Map" class="h-[320px] w-full rounded-2xl border-0" src="https://www.google.com/maps?q=Philadelphia%20PA%2019103&z=13&output=embed"></iframe>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="border-t border-slate-800 bg-slate-950/80">
+      <div class="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-6 text-sm text-slate-400 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+        <p>© 2026 Digital Success Point. All rights reserved.</p>
+        <div class="flex gap-4">
+          <a href="/login.html" class="hover:text-white">Login</a>
+          <a href="/signup.html" class="hover:text-white" data-ref-link="true">Register</a>
+          <a href="/admin/dashboard.html" class="hover:text-white">Admin</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

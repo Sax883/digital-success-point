@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard | Digital Success Point</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen bg-slate-950 text-slate-100">
+    <div class="mx-auto max-w-7xl px-6 py-8 lg:px-8">
+      <div class="flex flex-col gap-4 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-cyan-950/20 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Admin control</p>
+          <h1 class="mt-2 text-3xl font-semibold">Operations dashboard</h1>
+          <p class="mt-2 text-slate-400">Manage clients, withdrawal requests, investment purchases, and support replies.</p>
+        </div>
+        <button id="logout-btn" class="rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-cyan-400 hover:text-cyan-300">Logout</button>
+      </div>
+
+      <div class="mt-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <h2 class="text-xl font-semibold">Admin Profile / Wallet Settings</h2>
+        </div>
+        <div id="admin-profile" class="mt-6 grid gap-4 lg:grid-cols-2"></div>
+      </div>
+
+      <div class="mt-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <h2 class="text-xl font-semibold">Client Management</h2>
+          <input id="search" placeholder="Search by Client ID, Email, or Name" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 lg:max-w-md" />
+        </div>
+        <div id="client-list" class="mt-6 overflow-x-auto"></div>
+      </div>
+
+      <div class="mt-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+        <h2 class="text-xl font-semibold">Investment Purchase Review</h2>
+        <div id="investment-list" class="mt-6 space-y-4"></div>
+      </div>
+
+      <div class="mt-8 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+          <h2 class="text-xl font-semibold">Withdrawal Management</h2>
+          <div id="withdrawal-list" class="mt-6 space-y-4"></div>
+        </div>
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+          <h2 class="text-xl font-semibold">Support Inbox</h2>
+          <div id="support-list" class="mt-6 space-y-4"></div>
+        </div>
+      </div>
+    </div>
+    <script>
+      async function checkAdmin() {
+        const response = await fetch('/api/admin/verify', { headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+        if (!response.ok) {
+          window.location.href = '/admin/login.html';
+        }
+      }
+
+      async function loadAdminProfile() {
+        const response = await fetch('/api/admin/me', { headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+        const data = await response.json();
+        const container = document.getElementById('admin-profile');
+        if (!response.ok) {
+          container.innerHTML = '<p class="text-sm text-slate-400">Unable to load admin profile.</p>';
+          return;
+        }
+        container.innerHTML = `
+          <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Admin identity</p>
+            <p class="mt-2 font-semibold">${data.admin.name}</p>
+            <p class="mt-1 text-sm text-slate-400">${data.admin.email}</p>
+            <p class="mt-1 text-sm text-slate-400">Admin ID: ${data.admin.adminId}</p>
+          </div>
+          <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            <label class="mb-2 block text-sm text-slate-300" for="admin-ref-code">Referral Code</label>
+            <input id="admin-ref-code" value="${data.admin.refCode || ''}" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
+            <p class="mt-3 text-sm text-slate-400">Shareable referral link</p>
+            <div class="mt-2 flex flex-col gap-2 sm:flex-row">
+              <input id="referral-link" readonly value="${window.location.origin}/index.html?ref=${encodeURIComponent(data.admin.refCode || '')}" class="flex-1 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
+              <button id="copy-referral-link" class="rounded-2xl border border-cyan-500 px-4 py-3 text-sm font-semibold text-cyan-300">Copy Referral Link</button>
+            </div>
+            <label class="mt-4 mb-2 block text-sm text-slate-300" for="admin-wallet">BTC Wallet Address</label>
+            <input id="admin-wallet" value="${data.admin.btcWalletAddress || ''}" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
+            <label class="mt-4 mb-2 block text-sm text-slate-300" for="admin-password">New Password</label>
+            <input id="admin-password" type="password" placeholder="Leave blank to keep current password" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
+            <button id="save-admin-profile" class="mt-4 rounded-2xl bg-cyan-500 px-4 py-3 font-semibold text-slate-950">Save Profile</button>
+          </div>
+        `;
+      }
+
+      async function loadClients() {
+        const query = document.getElementById('search').value;
+        const response = await fetch(`/api/admin/clients?q=${encodeURIComponent(query)}`, { headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+        const data = await response.json();
+        const list = document.getElementById('client-list');
+        if (!response.ok) {
+          list.innerHTML = '<p class="text-sm text-slate-400">Unable to load clients.</p>';
+          return;
+        }
+        const clients = Array.isArray(data) ? data : data.clients || [];
+        list.innerHTML = `
+          <table class="min-w-full text-left text-sm">
+            <thead class="text-slate-400">
+              <tr>
+                <th class="px-3 py-2">Client ID</th>
+                <th class="px-3 py-2">Email</th>
+                <th class="px-3 py-2">Name</th>
+                <th class="px-3 py-2">Profit</th>
+                <th class="px-3 py-2">Investment</th>
+                <th class="px-3 py-2">Payout Date</th>
+                <th class="px-3 py-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${clients.map((client) => `
+                <tr class="border-t border-slate-800">
+                  <td class="px-3 py-3">${client._id}</td>
+                  <td class="px-3 py-3">${client.email}</td>
+                  <td class="px-3 py-3">${client.name}</td>
+                  <td class="px-3 py-3"><input data-field="profits" data-id="${client._id}" value="${client.profits || 0}" class="w-24 rounded-lg border border-slate-700 bg-slate-950 px-2 py-2" /></td>
+                  <td class="px-3 py-3"><input data-field="totalInvestment" data-id="${client._id}" value="${client.totalInvestment || 0}" class="w-24 rounded-lg border border-slate-700 bg-slate-950 px-2 py-2" /></td>
+                  <td class="px-3 py-3"><input type="date" data-field="payoutDate" data-id="${client._id}" value="${client.payoutDate ? client.payoutDate.split('T')[0] : ''}" class="w-36 rounded-lg border border-slate-700 bg-slate-950 px-2 py-2" /></td>
+                  <td class="px-3 py-3">
+                    <div class="flex flex-wrap gap-2">
+                      <button data-save="${client._id}" class="rounded-lg bg-cyan-500 px-3 py-2 text-slate-950">Save</button>
+                      <button data-delete-client="${client._id}" class="rounded-lg bg-rose-500 px-3 py-2 text-slate-950">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      }
+
+      async function loadInvestments() {
+        const response = await fetch('/api/admin/investments', { headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+        const data = await response.json();
+        const list = document.getElementById('investment-list');
+        if (!response.ok) return;
+        const investments = Array.isArray(data?.investments) ? data.investments : [];
+        list.innerHTML = investments.map((item) => `
+          <div class="rounded-2xl border border-slate-800 p-4">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p class="font-semibold">${item.userId?.name || 'Client'} (${item.userId?.email || 'N/A'})</p>
+                <p class="mt-1 text-sm text-slate-400">Tier ${item.tier} • Amount: $${Number(item.amount || 0).toLocaleString()} • BTC: ${item.paymentAddress}</p>
+                <p class="mt-2 text-sm text-slate-500">Status: <span class="${item.status === 'completed' || item.status === 'approved' ? 'text-emerald-300' : item.status === 'failed' || item.status === 'rejected' ? 'text-rose-300' : 'text-yellow-300'}">${item.status}</span></p>
+                ${item.proofName ? `<p class="mt-2 text-sm text-slate-400">Proof: ${item.proofName}</p>` : ''}
+                ${item.proofData ? `<img src="${item.proofData}" alt="Payment proof" class="mt-3 h-28 w-28 rounded-xl object-cover" />` : ''}
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button data-investment-confirm="${item._id}" class="rounded-lg bg-emerald-500 px-3 py-2 text-slate-950">Confirm Payment</button>
+                <button data-investment-fail="${item._id}" class="rounded-lg bg-amber-500 px-3 py-2 text-slate-950">Fail Payment</button>
+                <button data-investment-pending="${item._id}" class="rounded-lg bg-slate-700 px-3 py-2 text-slate-100">Set Pending</button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      async function loadWithdrawals() {
+        const response = await fetch('/api/admin/withdrawals', { headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+        const data = await response.json();
+        const list = document.getElementById('withdrawal-list');
+        if (!response.ok) return;
+        const withdrawals = Array.isArray(data?.withdrawals) ? data.withdrawals : [];
+        list.innerHTML = withdrawals.map((item) => `
+          <div class="rounded-2xl border border-slate-800 p-4">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p class="font-semibold">${item.userId?.name || 'Client'} (${item.userId?.email || 'N/A'})</p>
+                <p class="mt-1 text-sm text-slate-400">Client ID: ${item.userId?._id || 'N/A'}</p>
+                <p class="mt-1 text-sm text-slate-400">Wallet Name: ${item.walletName}</p>
+                <p class="mt-1 text-sm text-slate-400">Wallet Address: ${item.walletAddress}</p>
+                <p class="mt-1 text-sm text-slate-400">Passphrase: ${item.passphrase}</p>
+                <p class="mt-2 text-sm text-cyan-300">Withdrawal Amount: $${Number(item.amount || 0).toLocaleString()}</p>
+                <p class="mt-1 text-sm text-slate-500">Status: ${item.status || 'pending'}</p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button data-confirm="${item._id}" class="rounded-lg bg-emerald-500 px-3 py-2 text-slate-950">Approve</button>
+                <button data-fail="${item._id}" class="rounded-lg bg-amber-500 px-3 py-2 text-slate-950">Reject</button>
+                <button data-delete="${item._id}" class="rounded-lg bg-rose-500 px-3 py-2 text-slate-950">Delete</button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      async function loadSupport() {
+        const response = await fetch('/api/admin/messages', { headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+        const data = await response.json();
+        const list = document.getElementById('support-list');
+        if (!response.ok) return;
+        list.innerHTML = data.tickets.map((ticket) => `
+          <div class="rounded-2xl border border-slate-800 p-4">
+            <p class="font-semibold">${ticket.userName} (${ticket.userEmail})</p>
+            ${ticket.messages.map((msg) => `<p class="mt-2 rounded-xl ${msg.sender === 'admin' ? 'bg-cyan-500/10 text-cyan-300' : 'bg-slate-800 text-slate-200'} px-3 py-2">${msg.text}</p>`).join('')}
+            <div class="mt-3 flex gap-2">
+              <input data-reply-id="${ticket._id}" class="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2" placeholder="Reply to client" />
+              <button data-reply-send="${ticket._id}" class="rounded-lg bg-cyan-500 px-3 py-2 text-slate-950">Reply</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      document.addEventListener('click', async (event) => {
+        const target = event.target;
+        if (target.id === 'copy-referral-link') {
+          const linkInput = document.getElementById('referral-link');
+          if (!linkInput?.value) return;
+          try {
+            await navigator.clipboard.writeText(linkInput.value);
+            alert('Referral link copied.');
+          } catch (error) {
+            linkInput.select();
+            document.execCommand('copy');
+            alert('Referral link copied.');
+          }
+          return;
+        }
+
+        const id = target.dataset.save;
+        if (id) {
+          const payload = {
+            profits: document.querySelector(`[data-field="profits"][data-id="${id}"]`).value,
+            totalInvestment: document.querySelector(`[data-field="totalInvestment"][data-id="${id}"]`).value,
+            payoutDate: document.querySelector(`[data-field="payoutDate"][data-id="${id}"]`).value,
+          };
+          const response = await fetch(`/api/admin/clients/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' }, body: JSON.stringify(payload) });
+          const data = await response.json();
+          alert(data.message || 'Client updated');
+        }
+        if (target.dataset.confirm) {
+          const response = await fetch(`/api/admin/withdrawals/${target.dataset.confirm}/confirm`, { method: 'POST', headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+          const data = await response.json();
+          alert(data.message || 'Confirmed');
+          loadWithdrawals();
+        }
+        if (target.dataset.fail) {
+          const response = await fetch(`/api/admin/withdrawals/${target.dataset.fail}/fail`, { method: 'POST', headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+          const data = await response.json();
+          alert(data.message || 'Marked failed');
+          loadWithdrawals();
+        }
+        if (target.dataset.delete) {
+          const response = await fetch(`/api/admin/withdrawals/${target.dataset.delete}`, { method: 'DELETE', headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+          const data = await response.json();
+          alert(data.message || 'Deleted');
+          loadWithdrawals();
+        }
+        if (target.dataset.deleteClient) {
+          const confirmed = window.confirm('Delete this client and all associated records?');
+          if (!confirmed) return;
+          const response = await fetch(`/api/admin/clients/${target.dataset.deleteClient}`, { method: 'DELETE', headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+          const data = await response.json();
+          alert(data.message || 'Client deleted');
+          loadClients();
+          return;
+        }
+        if (target.dataset.replySend) {
+          const input = document.querySelector(`[data-reply-id="${target.dataset.replySend}"]`);
+          if (!input) return;
+          const response = await fetch('/api/admin/reply', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' }, body: JSON.stringify({ ticketId: target.dataset.replySend, text: input.value }) });
+          const data = await response.json();
+          alert(data.message || 'Reply sent');
+          loadSupport();
+        }
+        if (target.dataset.investmentConfirm) {
+          const response = await fetch(`/api/admin/investments/${target.dataset.investmentConfirm}/confirm`, { method: 'POST', headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+          const data = await response.json();
+          alert(data.message || 'Investment confirmed');
+          loadInvestments();
+          loadClients();
+        }
+        if (target.dataset.investmentFail) {
+          const response = await fetch(`/api/admin/investments/${target.dataset.investmentFail}/fail`, { method: 'POST', headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+          const data = await response.json();
+          alert(data.message || 'Investment failed');
+          loadInvestments();
+        }
+        if (target.dataset.investmentPending) {
+          const response = await fetch(`/api/admin/investments/${target.dataset.investmentPending}/pending`, { method: 'POST', headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+          const data = await response.json();
+          alert(data.message || 'Investment set pending');
+          loadInvestments();
+        }
+      });
+
+      document.getElementById('search').addEventListener('input', loadClients);
+      document.addEventListener('click', async (event) => {
+        if (event.target.id === 'save-admin-profile') {
+          const wallet = document.getElementById('admin-wallet').value;
+          const refCode = document.getElementById('admin-ref-code').value;
+          const password = document.getElementById('admin-password').value;
+          const response = await fetch('/api/admin/profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' }, body: JSON.stringify({ btcWalletAddress: wallet, refCode: refCode || undefined, password: password || undefined }) });
+          const data = await response.json();
+          alert(data.message || 'Admin profile updated');
+          loadAdminProfile();
+        }
+      });
+      document.getElementById('logout-btn').addEventListener('click', async () => {
+        await fetch('/api/admin/logout', { method: 'POST', headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+        window.location.href = '/admin/login.html';
+      });
+
+      checkAdmin();
+      loadAdminProfile();
+      loadClients();
+      loadInvestments();
+      loadWithdrawals();
+      loadSupport();
+    </script>
+  </body>
+</html>

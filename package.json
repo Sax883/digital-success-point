@@ -1,0 +1,20 @@
+{
+  "name": "digital-success-point",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Broker and affiliate investment platform for Digital Success Point",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.1",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.1",
+    "mongoose": "^8.11.1"
+  }
+}

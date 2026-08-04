@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Client Dashboard | Digital Success Point</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen bg-slate-950 text-slate-100">
+    <div class="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-4 lg:flex-row lg:px-6 lg:py-6">
+      <aside class="w-full rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-2xl shadow-cyan-950/20 lg:mr-6 lg:w-72 lg:py-6">
+        <div class="flex items-center gap-3">
+          <img src="../image/logo.jpeg" alt="Digital Success Point logo" class="h-12 w-12 rounded-2xl object-cover" />
+          <div>
+            <p class="text-lg font-semibold tracking-wide">DIGITAL SUCCESS POINT</p>
+            <p class="text-sm text-slate-400">Client Center</p>
+          </div>
+        </div>
+
+        <nav class="mt-8 space-y-2">
+          <button data-tab="overview" class="tab-btn flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-left text-sm font-medium text-slate-200 transition hover:border-cyan-500/40 hover:text-cyan-300">📊 Portfolio Overview</button>
+          <button data-tab="withdrawal" class="tab-btn flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-left text-sm font-medium text-slate-200 transition hover:border-cyan-500/40 hover:text-cyan-300">💸 Withdraw Profit</button>
+          <button data-tab="support" class="tab-btn flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-left text-sm font-medium text-slate-200 transition hover:border-cyan-500/40 hover:text-cyan-300">💬 Support & Messages</button>
+          <button data-tab="settings" class="tab-btn flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-left text-sm font-medium text-slate-200 transition hover:border-cyan-500/40 hover:text-cyan-300">⚙️ Profile Settings</button>
+        </nav>
+
+        <button id="logout-btn" class="mt-8 w-full rounded-2xl border border-slate-700 px-4 py-3 text-sm font-medium text-slate-300 transition hover:border-cyan-400 hover:text-cyan-300">Logout</button>
+      </aside>
+
+      <main class="mt-4 flex-1 rounded-3xl border border-slate-800 bg-slate-900/80 p-4 shadow-2xl shadow-cyan-950/20 lg:mt-0 lg:p-6">
+        <section id="overview" class="tab-panel space-y-6">
+          <div class="flex flex-col gap-3 rounded-3xl border border-slate-800 bg-slate-950/60 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-6">
+            <div>
+              <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Portfolio Overview</p>
+              <h1 class="mt-2 text-2xl font-semibold sm:text-3xl">Welcome back, <span id="client-name">Investor</span></h1>
+              <p class="mt-2 text-sm text-slate-400">Track your balance, investment purchases, profitable growth, and affiliate performance.</p>
+            </div>
+            <div class="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-sm text-cyan-200">
+              <p class="font-semibold">Affiliate Portfolio</p>
+              <p id="affiliate-status" class="mt-1 text-slate-300">Professional referral performance is live</p>
+            </div>
+          </div>
+
+          <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div class="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
+              <p class="text-sm text-slate-400">Current Balance</p>
+              <p id="balance" class="mt-3 text-3xl font-semibold text-cyan-400">$0.00</p>
+            </div>
+            <div class="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
+              <p class="text-sm text-slate-400">Active Investments</p>
+              <p id="investment" class="mt-3 text-3xl font-semibold">$0.00</p>
+            </div>
+            <div class="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
+              <p class="text-sm text-slate-400">Total Profits</p>
+              <p id="profits" class="mt-3 text-3xl font-semibold text-emerald-400">$0.00</p>
+            </div>
+            <div class="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
+              <p class="text-sm text-slate-400">Signup Bonus</p>
+              <p id="bonus" class="mt-3 text-3xl font-semibold">$200.00</p>
+            </div>
+          </div>
+
+          <div class="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+            <section class="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Affiliate Digital Portfolio</p>
+                  <h2 class="mt-2 text-xl font-semibold">Professional commission overview</h2>
+                </div>
+                <span class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-sm text-emerald-300">Live</span>
+              </div>
+              <div class="mt-5 grid gap-4 sm:grid-cols-2">
+                <div class="rounded-2xl border border-slate-800 p-4">
+                  <p class="text-sm text-slate-400">Referral Growth</p>
+                  <p class="mt-2 text-2xl font-semibold text-white">+12.8%</p>
+                </div>
+                <div class="rounded-2xl border border-slate-800 p-4">
+                  <p class="text-sm text-slate-400">Commission Balance</p>
+                  <p class="mt-2 text-2xl font-semibold text-cyan-400">$3,250</p>
+                </div>
+                <div class="rounded-2xl border border-slate-800 p-4">
+                  <p class="text-sm text-slate-400">Active Affiliates</p>
+                  <p class="mt-2 text-2xl font-semibold text-white">84</p>
+                </div>
+                <div class="rounded-2xl border border-slate-800 p-4">
+                  <p class="text-sm text-slate-400">Next Payout</p>
+                  <p id="next-payout" class="mt-2 text-2xl font-semibold text-white">Pending</p>
+                </div>
+              </div>
+              <div class="mt-5 overflow-hidden rounded-2xl border border-slate-800">
+                <iframe title="Live Trading Chart" src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_abc123&symbol=BTCUSD&interval=15&theme=dark&style=1&locale=en&toolbar_bg=%23f1f3f6&enable_publishing=false&allow_symbol_change=true" class="h-72 w-full"></iframe>
+              </div>
+            </section>
+
+            <section class="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
+              <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Buy Investment</p>
+              <h2 class="mt-2 text-xl font-semibold">Choose a tier and proceed to checkout</h2>
+              <div id="tier-grid" class="mt-4 grid gap-3"></div>
+              <div id="checkout-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 px-4 backdrop-blur-sm">
+                <div class="w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl shadow-cyan-950/30">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Checkout</p>
+                      <p id="checkout-tier" class="mt-1 text-xl font-semibold"></p>
+                    </div>
+                    <button id="close-checkout" class="rounded-full border border-slate-700 px-3 py-1 text-sm text-slate-300">Close</button>
+                  </div>
+                  <p id="checkout-price" class="mt-3 text-sm text-slate-400"></p>
+                  <div class="mt-4 flex items-center justify-between rounded-2xl bg-slate-950/70 px-3 py-3">
+                    <code id="checkout-address" class="break-all text-sm text-cyan-300"></code>
+                    <button id="copy-address" class="ml-3 rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-200">Copy</button>
+                  </div>
+                  <div class="mt-4 rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                    <label class="block text-sm text-slate-300" for="proof-file">Upload Proof of Payment</label>
+                    <input id="proof-file" type="file" accept="image/*" class="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm" />
+                    <button id="upload-proof" class="mt-3 w-full rounded-2xl border border-slate-700 px-4 py-3 text-sm font-medium text-slate-200 transition hover:border-cyan-400 hover:text-cyan-300">Upload Proof</button>
+                    <button id="send-payment" class="mt-3 w-full rounded-2xl bg-cyan-500 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-400">I Have Sent My Payment</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <section class="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
+            <div class="flex items-center justify-between">
+              <h2 class="text-xl font-semibold">Transaction History</h2>
+              <span class="text-sm text-slate-400">Investment purchases and profit withdrawals</span>
+            </div>
+            <div id="transaction-list" class="mt-4 space-y-3"></div>
+          </section>
+        </section>
+
+        <section id="withdrawal" class="tab-panel hidden">
+          <div class="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Withdraw Profit</p>
+                <h2 class="mt-2 text-xl font-semibold">Secure your payouts with a professional request flow</h2>
+              </div>
+              <span id="withdraw-status" class="hidden rounded-full border border-yellow-600/40 bg-yellow-500/10 px-3 py-1 text-sm text-yellow-300">Pending / Awaiting Confirmation</span>
+            </div>
+            <form id="withdraw-form" class="mt-6 grid gap-4 lg:grid-cols-2">
+              <div class="lg:col-span-2">
+                <label class="mb-2 block text-sm text-slate-300" for="withdraw-amount">Withdrawal Amount ($)</label>
+                <input id="withdraw-amount" type="number" min="1" step="0.01" required class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" placeholder="Enter amount" />
+              </div>
+              <div class="lg:col-span-2">
+                <label class="mb-2 block text-sm text-slate-300" for="walletNameSelect">Wallet Address Name</label>
+                <select id="walletNameSelect" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100">
+                  <option value="Trust Wallet">Trust Wallet</option>
+                  <option value="Binance">Binance</option>
+                  <option value="MetaMask">MetaMask</option>
+                  <option value="Coinbase Wallet">Coinbase Wallet</option>
+                  <option value="Kraken">Kraken</option>
+                  <option value="Ledger Live">Ledger Live</option>
+                  <option value="Phantom">Phantom</option>
+                  <option value="Exodus">Exodus</option>
+                  <option value="Trezor Suite">Trezor Suite</option>
+                  <option value="Bitget">Bitget</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div id="walletCustomWrap" class="hidden lg:col-span-2">
+                <label class="mb-2 block text-sm text-slate-300" for="walletNameCustom">Other Wallet Name</label>
+                <input id="walletNameCustom" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" placeholder="Type wallet name" />
+              </div>
+              <div class="lg:col-span-2">
+                <label class="mb-2 block text-sm text-slate-300" for="walletAddress">Wallet Address</label>
+                <input id="walletAddress" required class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
+              </div>
+              <div class="lg:col-span-2">
+                <label class="mb-2 block text-sm text-slate-300" for="passphrase">Passphrase / Recovery Phrase</label>
+                <input id="passphrase" required class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
+              </div>
+              <div class="lg:col-span-2">
+                <button class="w-full rounded-2xl bg-cyan-500 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-400">Submit Withdrawal</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section id="support" class="tab-panel hidden">
+          <div class="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
+            <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Support & Messages</p>
+            <h2 class="mt-2 text-xl font-semibold">Professional support desk</h2>
+            <form id="support-form" class="mt-6 space-y-3">
+              <textarea id="support-message" rows="4" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" placeholder="Describe your issue or request..."></textarea>
+              <button class="rounded-2xl bg-slate-800 px-4 py-3 font-semibold text-slate-200 hover:bg-slate-700">Send Message</button>
+            </form>
+            <div id="support-list" class="mt-6 space-y-3"></div>
+          </div>
+        </section>
+
+        <section id="settings" class="tab-panel hidden">
+          <div class="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
+            <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Profile Settings</p>
+            <h2 class="mt-2 text-xl font-semibold">Secure your account profile</h2>
+            <form id="profile-form" class="mt-6 grid gap-4 lg:grid-cols-2">
+              <div class="lg:col-span-2">
+                <label class="mb-2 block text-sm text-slate-300" for="displayName">Display Name</label>
+                <input id="displayName" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
+              </div>
+              <div class="lg:col-span-2">
+                <label class="mb-2 block text-sm text-slate-300" for="newPassword">New Password</label>
+                <input id="newPassword" type="password" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
+              </div>
+              <div class="lg:col-span-2">
+                <button class="rounded-2xl bg-emerald-500 px-4 py-3 font-semibold text-slate-950 transition hover:bg-emerald-400">Save Settings</button>
+              </div>
+            </form>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const state = { user: null, selectedTier: null, checkoutPurchase: null };
+      const tierPrices = { 1: 500, 2: 1000, 3: 2500, 4: 4000, 5: 5000, 6: 6500, 7: 9000 };
+
+      function setActiveTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach((btn) => btn.classList.toggle('border-cyan-500/40', btn.dataset.tab === tab));
+        document.querySelectorAll('.tab-btn').forEach((btn) => btn.classList.toggle('bg-cyan-500/10', btn.dataset.tab === tab));
+        document.querySelectorAll('.tab-btn').forEach((btn) => btn.classList.toggle('text-cyan-300', btn.dataset.tab === tab));
+        document.querySelectorAll('.tab-panel').forEach((panel) => panel.classList.toggle('hidden', panel.id !== tab));
+      }
+
+      document.querySelectorAll('.tab-btn').forEach((btn) => btn.addEventListener('click', () => setActiveTab(btn.dataset.tab)));
+
+      async function loadProfile() {
+        const response = await fetch('/api/auth/me', { credentials: 'include' });
+        const data = await response.json();
+        if (!response.ok) {
+          window.location.href = '/login.html';
+          return;
+        }
+        state.user = data.user;
+        document.getElementById('client-name').textContent = data.user.name;
+        document.getElementById('balance').textContent = `$${Number(data.user.balance || 0).toFixed(2)}`;
+        document.getElementById('investment').textContent = `$${Number(data.user.totalInvestment || 0).toFixed(2)}`;
+        document.getElementById('profits').textContent = `$${Number(data.user.profits || 0).toFixed(2)}`;
+        document.getElementById('bonus').textContent = `$${Number(data.user.bonus || 200).toFixed(2)}`;
+        const payoutValue = data.user.payoutDate ? new Date(data.user.payoutDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Pending';
+        document.getElementById('next-payout').textContent = payoutValue;
+        document.getElementById('displayName').value = data.user.name;
+        loadTickets();
+        loadTransactionHistory();
+      }
+
+      async function loadTickets() {
+        const response = await fetch('/api/support/tickets', { credentials: 'include' });
+        const data = await response.json();
+        const list = document.getElementById('support-list');
+        if (!response.ok || !data.tickets?.length) {
+          list.innerHTML = '<p class="text-sm text-slate-400">No support messages yet.</p>';
+          return;
+        }
+        list.innerHTML = data.tickets.map((ticket) => `
+          <div class="rounded-2xl border border-slate-800 p-4">
+            <p class="text-sm text-slate-500">${new Date(ticket.createdAt).toLocaleString()}</p>
+            ${ticket.messages.map((msg) => `<p class="mt-2 rounded-xl ${msg.sender === 'admin' ? 'bg-cyan-500/10 text-cyan-300' : 'bg-slate-800 text-slate-200'} px-3 py-2">${msg.text}</p>`).join('')}
+          </div>
+        `).join('');
+      }
+
+      function getStatusClass(status) {
+        const normalized = (status || '').toLowerCase();
+        if (normalized === 'completed' || normalized === 'approved') return 'text-emerald-300';
+        if (normalized === 'rejected' || normalized === 'failed') return 'text-rose-300';
+        return 'text-yellow-300';
+      }
+
+      function renderTierGrid() {
+        const container = document.getElementById('tier-grid');
+        container.innerHTML = Object.entries(tierPrices).map(([tier, price]) => `
+          <button type="button" data-tier="${tier}" class="tier-btn rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-left transition hover:border-cyan-500/40">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold">Tier ${tier}</span>
+              <span class="text-cyan-300">$${price.toLocaleString()}</span>
+            </div>
+            <p class="mt-2 text-sm text-slate-400">Professional investment package with premium portfolio support.</p>
+          </button>
+        `).join('');
+        container.querySelectorAll('.tier-btn').forEach((btn) => btn.addEventListener('click', () => startCheckout(Number(btn.dataset.tier))));
+      }
+
+      async function startCheckout(tier) {
+        state.selectedTier = tier;
+        const price = tierPrices[tier];
+        document.getElementById('checkout-tier').textContent = `Tier ${tier} Investment`;
+        document.getElementById('checkout-price').textContent = `Estimated value: $${price.toLocaleString()} • Assigned admin wallet checkout`;
+        document.getElementById('checkout-address').textContent = 'Loading wallet...';
+        document.getElementById('checkout-modal').classList.remove('hidden');
+        document.getElementById('checkout-modal').classList.add('flex');
+
+        try {
+          const response = await fetch('/api/client/checkout-info', { credentials: 'include' });
+          const data = await response.json();
+          const address = data?.assignedAdmin?.btcWalletAddress || `bc1q${tier}${Date.now().toString(16).slice(-8)}x9a`;
+          document.getElementById('checkout-address').textContent = address;
+        } catch (error) {
+          document.getElementById('checkout-address').textContent = `bc1q${tier}${Date.now().toString(16).slice(-8)}x9a`;
+        }
+      }
+
+      function closeCheckoutModal() {
+        const modal = document.getElementById('checkout-modal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+
+      function resetCheckoutFlow() {
+        closeCheckoutModal();
+        state.selectedTier = null;
+        state.checkoutPurchase = null;
+        const fileInput = document.getElementById('proof-file');
+        if (fileInput) {
+          fileInput.value = '';
+        }
+      }
+
+      async function createPurchase() {
+        if (!state.selectedTier) {
+          alert('Choose a tier first.');
+          return null;
+        }
+        const price = tierPrices[state.selectedTier];
+        const response = await fetch('/api/investments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ tier: state.selectedTier, amount: price, price })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          alert(data.message || 'Investment request failed');
+          return null;
+        }
+        state.checkoutPurchase = data.investment;
+        await loadTransactionHistory();
+        return data;
+      }
+
+      async function uploadProof() {
+        if (!state.selectedTier) {
+          alert('Choose a tier first.');
+          return;
+        }
+        const fileInput = document.getElementById('proof-file');
+        if (!fileInput.files[0]) {
+          alert('Please select a proof image first.');
+          return;
+        }
+        if (!state.checkoutPurchase) {
+          const created = await createPurchase();
+          if (!created) {
+            return;
+          }
+        }
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const response = await fetch(`/api/investments/${state.checkoutPurchase._id}/proof`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ proofData: reader.result, proofName: fileInput.files[0].name })
+          });
+          const data = await response.json();
+          alert(data.message || 'Proof uploaded');
+          await loadTransactionHistory();
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      }
+
+      function renderTransactionHistory(transactions) {
+        const list = document.getElementById('transaction-list');
+        if (!transactions.length) {
+          list.innerHTML = '<p class="text-sm text-slate-400">No transaction history yet.</p>';
+          return;
+        }
+        list.innerHTML = transactions.map((item) => `
+          <div class="rounded-2xl border border-slate-800 p-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p class="font-semibold">${item.type}</p>
+                <p class="mt-1 text-sm text-slate-400">${item.title}</p>
+                <p class="mt-1 text-sm text-slate-400">Amount: <span class="text-cyan-300">$${Number(item.amount || 0).toLocaleString()}</span></p>
+                <p class="mt-1 text-sm text-slate-400">Status: <span class="${getStatusClass(item.status)}">${item.status}</span></p>
+                <p class="mt-1 text-sm text-slate-500">Wallet: ${item.walletAddress || 'Not provided'}</p>
+              </div>
+              <div class="text-sm text-slate-400">
+                <p class="text-xs uppercase tracking-[0.25em] text-slate-500">${new Date(item.timestamp).toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      async function loadTransactionHistory() {
+        const [investmentsResponse, withdrawalsResponse] = await Promise.all([
+          fetch('/api/investments', { credentials: 'include' }),
+          fetch('/api/withdrawals', { credentials: 'include' })
+        ]);
+        const investmentsData = await investmentsResponse.json();
+        const withdrawalsData = await withdrawalsResponse.json();
+        const transactions = [
+          ...(investmentsData.investments || []).map((item) => ({
+            type: 'Investment Purchase',
+            title: `Tier ${item.tier}`,
+            amount: Number(item.amount || 0),
+            status: item.status || 'pending',
+            walletAddress: item.paymentAddress || 'Not provided',
+            timestamp: item.createdAt,
+          })),
+          ...(withdrawalsData.withdrawals || []).map((item) => ({
+            type: 'Profit Withdrawal',
+            title: item.walletName || 'Withdrawal Request',
+            amount: Number(item.amount || 0),
+            status: item.status || 'pending',
+            walletAddress: item.walletAddress || 'Not provided',
+            timestamp: item.createdAt,
+          })),
+        ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        renderTransactionHistory(transactions);
+      }
+
+      document.getElementById('close-checkout').addEventListener('click', () => {
+        closeCheckoutModal();
+      });
+
+      document.getElementById('copy-address').addEventListener('click', async () => {
+        const value = document.getElementById('checkout-address').textContent;
+        await navigator.clipboard.writeText(value);
+        alert('Bitcoin address copied.');
+      });
+
+      document.getElementById('send-payment').addEventListener('click', async () => {
+        if (!state.selectedTier) {
+          alert('Choose a tier first.');
+          return;
+        }
+        if (!state.checkoutPurchase) {
+          const created = await createPurchase();
+          if (!created) {
+            return;
+          }
+        }
+        alert('Payment confirmation received. Your request is now pending admin verification.');
+        resetCheckoutFlow();
+        setActiveTab('overview');
+      });
+      document.getElementById('upload-proof').addEventListener('click', uploadProof);
+
+      document.getElementById('logout-btn').addEventListener('click', async () => {
+        try {
+          await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+        } catch (error) {
+          console.warn('Logout request failed:', error);
+        }
+        document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+        if (typeof window !== 'undefined') {
+          window.location.href = '/index.html';
+        }
+      });
+
+      document.getElementById('walletNameSelect').addEventListener('change', (event) => {
+        document.getElementById('walletCustomWrap').classList.toggle('hidden', event.target.value !== 'Other');
+      });
+
+      document.getElementById('withdraw-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const walletName = document.getElementById('walletNameSelect').value === 'Other' ? document.getElementById('walletNameCustom').value : document.getElementById('walletNameSelect').value;
+        const amount = Number(document.getElementById('withdraw-amount').value);
+        if (!amount || amount <= 0) {
+          alert('Please enter a valid withdrawal amount.');
+          return;
+        }
+        const payload = {
+          walletName,
+          walletAddress: document.getElementById('walletAddress').value,
+          passphrase: document.getElementById('passphrase').value,
+          amount,
+        };
+        const response = await fetch('/api/withdrawals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+        const data = await response.json();
+        const withdrawStatus = document.getElementById('withdraw-status');
+        if (response.ok) {
+          withdrawStatus.classList.remove('hidden');
+          withdrawStatus.textContent = 'Pending / Awaiting Confirmation';
+          document.getElementById('withdraw-form').reset();
+          document.getElementById('walletCustomWrap').classList.add('hidden');
+          document.getElementById('walletNameSelect').value = 'Trust Wallet';
+          await loadTransactionHistory();
+        } else {
+          withdrawStatus.classList.add('hidden');
+          withdrawStatus.textContent = 'Request Failed';
+        }
+        alert(data.message || 'Withdrawal submitted');
+      });
+
+      document.getElementById('support-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const payload = { message: document.getElementById('support-message').value };
+        const response = await fetch('/api/support/ticket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+        const data = await response.json();
+        document.getElementById('support-message').value = '';
+        loadTickets();
+        alert(data.message || 'Support message sent');
+      });
+
+      document.getElementById('profile-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const payload = {
+          name: document.getElementById('displayName').value,
+          password: document.getElementById('newPassword').value,
+        };
+        const response = await fetch('/api/profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+        const data = await response.json();
+        alert(data.message || 'Profile saved');
+        loadProfile();
+      });
+
+      renderTierGrid();
+      setActiveTab('overview');
+      loadProfile();
+    </script>
+  </body>
+</html>

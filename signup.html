@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Signup | Digital Success Point</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen bg-slate-950 text-slate-100">
+    <div class="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6 py-12 lg:px-8">
+      <div class="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl shadow-cyan-950/30">
+        <div class="mb-8 text-center">
+          <img src="./image/logo.jpeg" alt="logo" class="mx-auto mb-4 h-16 w-16 rounded-full object-cover" />
+          <h1 class="text-2xl font-semibold">Create your account</h1>
+          <p class="mt-2 text-sm text-slate-400">Every new account receives a $200 signup bonus.</p>
+        </div>
+        <form id="signup-form" class="space-y-4">
+          <div>
+            <label class="mb-2 block text-sm text-slate-300" for="name">Full Name</label>
+            <input id="name" name="name" type="text" required class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none ring-0 focus:border-cyan-500" />
+          </div>
+          <div>
+            <label class="mb-2 block text-sm text-slate-300" for="email">Email</label>
+            <input id="email" name="email" type="email" required class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none ring-0 focus:border-cyan-500" />
+          </div>
+          <div>
+            <label class="mb-2 block text-sm text-slate-300" for="password">Password</label>
+            <input id="password" name="password" type="password" required class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none ring-0 focus:border-cyan-500" />
+          </div>
+          <button class="w-full rounded-2xl bg-cyan-500 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-400">Register Now</button>
+        </form>
+        <div class="mt-6 text-center text-sm text-slate-400">
+          Already have an account? <a href="/login.html" class="text-cyan-300 hover:text-cyan-200">Login</a>
+        </div>
+      </div>
+    </div>
+    <script>
+      const form = document.getElementById('signup-form');
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const params = new URLSearchParams(window.location.search);
+        const ref = params.get('ref') || localStorage.getItem('refCode') || '';
+        const payload = {
+          name: document.getElementById('name').value,
+          email: document.getElementById('email').value,
+          password: document.getElementById('password').value,
+          ref: ref || undefined,
+        };
+        const response = await fetch('/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const data = await response.json();
+        if (response.ok) {
+          window.location.href = '/client/dashboard.html';
+        } else {
+          alert(data.message || 'Signup failed');
+        }
+      });
+    </script>
+  </body>
+</html>
