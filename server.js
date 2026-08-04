@@ -7,20 +7,16 @@ const { connectToDatabase } = require('./db');
 
 const app = express();
 
-app.use(express.static(path.join(__dirname, '.')));
+// Serve static assets and subfolders explicitly
 app.use('/image', express.static(path.join(__dirname, 'image')));
+app.use('/admin', express.static(path.join(__dirname, 'admin')));
+app.use('/client', express.static(path.join(__dirname, 'client')));
+app.use(express.static(__dirname));
 
-app.get('/login.html', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'login.html'));
-});
-
-app.get('/signup.html', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'signup.html'));
-});
-
-app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+// HTML Page Routes
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get('/login.html', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
+app.get('/signup.html', (req, res) => res.sendFile(path.join(__dirname, 'signup.html')));
 
 app.use(apiApp);
 
