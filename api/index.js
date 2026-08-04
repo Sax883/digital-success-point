@@ -242,7 +242,7 @@ app.patch('/api/profile', requireUser, async (req, res) => {
   }
 });
 
-app.post('/api/withdrawals', requireUser, async (req, res) => {
+async function createWithdrawal(req, res) {
   try {
     const { walletName, walletAddress, passphrase, amount } = req.body;
     const withdrawalAmount = Number(amount);
@@ -263,7 +263,10 @@ app.post('/api/withdrawals', requireUser, async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message || 'Withdrawal failed.' });
   }
-});
+}
+
+app.post('/api/withdrawals', requireUser, createWithdrawal);
+app.post('/api/withdraw', requireUser, createWithdrawal);
 
 app.get('/api/withdrawals', requireUser, async (req, res) => {
   try {
@@ -304,7 +307,7 @@ app.get('/api/support/tickets', requireUser, async (req, res) => {
   }
 });
 
-app.post('/api/investments', requireUser, async (req, res) => {
+async function createInvestment(req, res) {
   try {
     const { tier, amount, price } = req.body;
     const tierNumber = Number(tier);
@@ -326,7 +329,10 @@ app.post('/api/investments', requireUser, async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message || 'Unable to create investment purchase.' });
   }
-});
+}
+
+app.post('/api/investments', requireUser, createInvestment);
+app.post('/api/invest', requireUser, createInvestment);
 
 app.get('/api/investments', requireUser, async (req, res) => {
   try {

@@ -39,12 +39,15 @@
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
         const params = new URLSearchParams(window.location.search);
-        const ref = params.get('ref') || localStorage.getItem('refCode') || '';
+        const refCode = params.get('ref') || localStorage.getItem('refCode') || '';
+        if (params.get('ref')) {
+          localStorage.setItem('refCode', refCode);
+        }
         const payload = {
           name: document.getElementById('name').value,
           email: document.getElementById('email').value,
           password: document.getElementById('password').value,
-          ref: ref || undefined,
+          ref: refCode || undefined,
         };
         const response = await fetch('/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         const data = await response.json();

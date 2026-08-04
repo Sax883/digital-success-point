@@ -34,7 +34,6 @@
         <p class="text-sm font-semibold">Client Dashboard</p>
         <p class="text-xs text-slate-400">Tap menu to navigate</p>
       </div>
-      <button id="mobile-logout-top" class="rounded-full border border-slate-700 px-3 py-2 text-slate-100">Logout</button>
     </header>
 
     <div class="mx-auto flex min-h-screen max-w-7xl flex-col px-4 pt-20 pb-4 lg:flex-row lg:px-6 lg:py-6 lg:pt-0">
@@ -285,10 +284,6 @@
       document.getElementById('mobile-menu-button').addEventListener('click', openDrawer);
       document.getElementById('mobile-drawer-close').addEventListener('click', closeDrawer);
       document.getElementById('mobile-drawer-backdrop').addEventListener('click', closeDrawer);
-      document.getElementById('mobile-logout-top').addEventListener('click', async () => {
-        closeDrawer();
-        await document.getElementById('logout-btn').click();
-      });
       document.getElementById('mobile-logout-btn').addEventListener('click', async () => {
         closeDrawer();
         await document.getElementById('logout-btn').click();
