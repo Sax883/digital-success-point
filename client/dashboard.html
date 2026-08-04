@@ -217,6 +217,14 @@
       const state = { user: null, selectedTier: null, checkoutPurchase: null };
       const tierPrices = { 1: 500, 2: 1000, 3: 2500, 4: 4000, 5: 5000, 6: 6500, 7: 9000 };
 
+      function getAuthHeaders(extra = {}) {
+        const token = localStorage.getItem('token') || '';
+        return {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...extra,
+        };
+      }
+
       function setActiveTab(tab) {
         document.querySelectorAll('.tab-btn').forEach((btn) => btn.classList.toggle('border-cyan-500/40', btn.dataset.tab === tab));
         document.querySelectorAll('.tab-btn').forEach((btn) => btn.classList.toggle('bg-cyan-500/10', btn.dataset.tab === tab));
@@ -227,27 +235,41 @@
       document.querySelectorAll('.tab-btn').forEach((btn) => btn.addEventListener('click', () => setActiveTab(btn.dataset.tab)));
 
       async function loadProfile() {
-        const response = await fetch('/api/auth/me', { credentials: 'include' });
-        const data = await response.json();
-        if (!response.ok) {
+        const token = localStorage.getItem('token') || '';
+        if (!token) {
           window.location.href = '/login.html';
           return;
         }
-        state.user = data.user;
-        document.getElementById('client-name').textContent = data.user.name;
-        document.getElementById('balance').textContent = `$${Number(data.user.balance || 0).toFixed(2)}`;
-        document.getElementById('investment').textContent = `$${Number(data.user.totalInvestment || 0).toFixed(2)}`;
-        document.getElementById('profits').textContent = `$${Number(data.user.profits || 0).toFixed(2)}`;
-        document.getElementById('bonus').textContent = `$${Number(data.user.bonus || 200).toFixed(2)}`;
-        const payoutValue = data.user.payoutDate ? new Date(data.user.payoutDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Pending';
-        document.getElementById('next-payout').textContent = payoutValue;
-        document.getElementById('displayName').value = data.user.name;
-        loadTickets();
-        loadTransactionHistory();
+
+        try {
+          const response = await fetch('/api/auth/me', { credentials: 'include', headers: getAuthHeaders() });
+          if (response.status === 401) {
+            window.location.href = '/login.html';
+            return;
+          }
+          if (!response.ok) {
+            console.warn('Unable to load client profile:', response.status);
+            return;
+          }
+          const data = await response.json();
+          state.user = data.user;
+          document.getElementById('client-name').textContent = data.user.name;
+          document.getElementById('balance').textContent = `$${Number(data.user.balance || 0).toFixed(2)}`;
+          document.getElementById('investment').textContent = `$${Number(data.user.totalInvestment || 0).toFixed(2)}`;
+          document.getElementById('profits').textContent = `$${Number(data.user.profits || 0).toFixed(2)}`;
+          document.getElementById('bonus').textContent = `$${Number(data.user.bonus || 200).toFixed(2)}`;
+          const payoutValue = data.user.payoutDate ? new Date(data.user.payoutDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Pending';
+          document.getElementById('next-payout').textContent = payoutValue;
+          document.getElementById('displayName').value = data.user.name;
+          loadTickets();
+          loadTransactionHistory();
+        } catch (error) {
+          console.warn('Unable to load client profile due to a network or server error:', error);
+        }
       }
 
       async function loadTickets() {
-        const response = await fetch('/api/support/tickets', { credentials: 'include' });
+        const response = await fetch('/api/support/tickets', { credentials: 'include', headers: getAuthHeaders() });
         const data = await response.json();
         const list = document.getElementById('support-list');
         if (!response.ok || !data.tickets?.length) {
@@ -293,7 +315,7 @@
         document.getElementById('checkout-modal').classList.add('flex');
 
         try {
-          const response = await fetch('/api/client/checkout-info', { credentials: 'include' });
+          const response = await fetch('/api/client/checkout-info', { credentials: 'include', headers: getAuthHeaders() });
           const data = await response.json();
           const address = data?.assignedAdmin?.btcWalletAddress || `bc1q${tier}${Date.now().toString(16).slice(-8)}x9a`;
           document.getElementById('checkout-address').textContent = address;
@@ -326,7 +348,7 @@
         const price = tierPrices[state.selectedTier];
         const response = await fetch('/api/investments', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
           credentials: 'include',
           body: JSON.stringify({ tier: state.selectedTier, amount: price, price })
         });
@@ -360,7 +382,7 @@
         reader.onload = async () => {
           const response = await fetch(`/api/investments/${state.checkoutPurchase._id}/proof`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
             credentials: 'include',
             body: JSON.stringify({ proofData: reader.result, proofName: fileInput.files[0].name })
           });
@@ -397,8 +419,8 @@
 
       async function loadTransactionHistory() {
         const [investmentsResponse, withdrawalsResponse] = await Promise.all([
-          fetch('/api/investments', { credentials: 'include' }),
-          fetch('/api/withdrawals', { credentials: 'include' })
+          fetch('/api/investments', { credentials: 'include', headers: getAuthHeaders() }),
+          fetch('/api/withdrawals', { credentials: 'include', headers: getAuthHeaders() })
         ]);
         const investmentsData = await investmentsResponse.json();
         const withdrawalsData = await withdrawalsResponse.json();
@@ -452,10 +474,11 @@
 
       document.getElementById('logout-btn').addEventListener('click', async () => {
         try {
-          await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+          await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', headers: getAuthHeaders() });
         } catch (error) {
           console.warn('Logout request failed:', error);
         }
+        localStorage.removeItem('token');
         document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
         if (typeof window !== 'undefined') {
           window.location.href = '/index.html';
@@ -480,7 +503,7 @@
           passphrase: document.getElementById('passphrase').value,
           amount,
         };
-        const response = await fetch('/api/withdrawals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+        const response = await fetch('/api/withdrawals', { method: 'POST', headers: getAuthHeaders({ 'Content-Type': 'application/json' }), credentials: 'include', body: JSON.stringify(payload) });
         const data = await response.json();
         const withdrawStatus = document.getElementById('withdraw-status');
         if (response.ok) {
@@ -500,7 +523,7 @@
       document.getElementById('support-form').addEventListener('submit', async (event) => {
         event.preventDefault();
         const payload = { message: document.getElementById('support-message').value };
-        const response = await fetch('/api/support/ticket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+        const response = await fetch('/api/support/ticket', { method: 'POST', headers: getAuthHeaders({ 'Content-Type': 'application/json' }), credentials: 'include', body: JSON.stringify(payload) });
         const data = await response.json();
         document.getElementById('support-message').value = '';
         loadTickets();
@@ -513,7 +536,7 @@
           name: document.getElementById('displayName').value,
           password: document.getElementById('newPassword').value,
         };
-        const response = await fetch('/api/profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+        const response = await fetch('/api/profile', { method: 'PATCH', headers: getAuthHeaders({ 'Content-Type': 'application/json' }), credentials: 'include', body: JSON.stringify(payload) });
         const data = await response.json();
         alert(data.message || 'Profile saved');
         loadProfile();

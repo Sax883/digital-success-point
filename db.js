@@ -214,6 +214,48 @@ class FallbackQuery {
   }
 }
 
+class FallbackDocQuery {
+  constructor(modelName, doc) {
+    this.modelName = modelName;
+    this.doc = doc;
+    this.selectFields = null;
+  }
+
+  select(fields) {
+    this.selectFields = fields;
+    return this;
+  }
+
+  sort() {
+    return this;
+  }
+
+  populate() {
+    return this;
+  }
+
+  async execute() {
+    if (!this.doc) return null;
+    let result = cloneDoc(this.doc);
+    if (typeof this.selectFields === 'string') {
+      const exclusions = this.selectFields.split(' ').filter(Boolean).filter((field) => field.startsWith('-')).map((field) => field.slice(1));
+      if (exclusions.length) {
+        result = { ...result };
+        exclusions.forEach((field) => delete result[field]);
+      }
+    }
+    return result;
+  }
+
+  then(resolve, reject) {
+    return this.execute().then(resolve, reject);
+  }
+
+  catch(reject) {
+    return this.execute().catch(reject);
+  }
+}
+
 function attachFallbackModel(model, modelName) {
   if (model.__fallbackAttached) return;
   model.__fallbackAttached = true;
@@ -229,7 +271,7 @@ function attachFallbackModel(model, modelName) {
     const collection = fallbackStores[modelName];
     const matches = [...collection.values()].filter((doc) => matchesFilter(filter, doc));
     const doc = matches[0] || null;
-    return Promise.resolve(doc ? toFallbackDoc(modelName, cloneDoc(doc)) : null);
+    return new FallbackDocQuery(modelName, doc ? toFallbackDoc(modelName, cloneDoc(doc)) : null);
   };
 
   model.find = function find(filter) {
@@ -241,7 +283,7 @@ function attachFallbackModel(model, modelName) {
   model.findById = function findById(id) {
     const collection = fallbackStores[modelName];
     const doc = collection.get(String(id));
-    return Promise.resolve(doc ? toFallbackDoc(modelName, cloneDoc(doc)) : null);
+    return new FallbackDocQuery(modelName, doc ? toFallbackDoc(modelName, cloneDoc(doc)) : null);
   };
 
   model.findByIdAndUpdate = async function findByIdAndUpdate(id, updates, options = {}) {
@@ -261,10 +303,10 @@ function attachFallbackModel(model, modelName) {
     });
     if (options.new === false) {
       collection.set(key, updated);
-      return toFallbackDoc(modelName, cloneDoc(updated));
+      return new FallbackDocQuery(modelName, toFallbackDoc(modelName, cloneDoc(updated)));
     }
     collection.set(key, updated);
-    return toFallbackDoc(modelName, cloneDoc(updated));
+    return new FallbackDocQuery(modelName, toFallbackDoc(modelName, cloneDoc(updated)));
   };
 
   model.findByIdAndDelete = async function findByIdAndDelete(id) {

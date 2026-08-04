@@ -49,48 +49,85 @@
       </div>
     </div>
     <script>
+      function getAdminAuthHeaders(extra = {}) {
+        const token = localStorage.getItem('adminToken') || '';
+        return {
+          ...(token ? { Authorization: `Bearer ${token}`, 'x-admin-token': token } : {}),
+          ...extra,
+        };
+      }
+
       async function checkAdmin() {
-        const response = await fetch('/api/admin/verify', { headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
-        if (!response.ok) {
+        const token = localStorage.getItem('adminToken') || '';
+        if (!token) {
           window.location.href = '/admin/login.html';
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/admin/verify', { headers: getAdminAuthHeaders() });
+          if (response.status === 401) {
+            window.location.href = '/admin/login.html';
+            return;
+          }
+          if (!response.ok) {
+            console.warn('Unable to verify admin session:', response.status);
+          }
+        } catch (error) {
+          console.warn('Unable to verify admin session due to a network or server error:', error);
         }
       }
 
       async function loadAdminProfile() {
-        const response = await fetch('/api/admin/me', { headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
-        const data = await response.json();
-        const container = document.getElementById('admin-profile');
-        if (!response.ok) {
-          container.innerHTML = '<p class="text-sm text-slate-400">Unable to load admin profile.</p>';
+        const token = localStorage.getItem('adminToken') || '';
+        if (!token) {
+          window.location.href = '/admin/login.html';
           return;
         }
-        container.innerHTML = `
-          <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-            <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Admin identity</p>
-            <p class="mt-2 font-semibold">${data.admin.name}</p>
-            <p class="mt-1 text-sm text-slate-400">${data.admin.email}</p>
-            <p class="mt-1 text-sm text-slate-400">Admin ID: ${data.admin.adminId}</p>
-          </div>
-          <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-            <label class="mb-2 block text-sm text-slate-300" for="admin-ref-code">Referral Code</label>
-            <input id="admin-ref-code" value="${data.admin.refCode || ''}" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
-            <p class="mt-3 text-sm text-slate-400">Shareable referral link</p>
-            <div class="mt-2 flex flex-col gap-2 sm:flex-row">
-              <input id="referral-link" readonly value="${window.location.origin}/index.html?ref=${encodeURIComponent(data.admin.refCode || '')}" class="flex-1 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
-              <button id="copy-referral-link" class="rounded-2xl border border-cyan-500 px-4 py-3 text-sm font-semibold text-cyan-300">Copy Referral Link</button>
+
+        try {
+          const response = await fetch('/api/admin/me', { headers: getAdminAuthHeaders() });
+          if (response.status === 401) {
+            window.location.href = '/admin/login.html';
+            return;
+          }
+          if (!response.ok) {
+            throw new Error(`Admin profile request failed with ${response.status}`);
+          }
+          const data = await response.json();
+          const container = document.getElementById('admin-profile');
+          container.innerHTML = `
+            <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+              <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Admin identity</p>
+              <p class="mt-2 font-semibold">${data.admin.name}</p>
+              <p class="mt-1 text-sm text-slate-400">${data.admin.email}</p>
+              <p class="mt-1 text-sm text-slate-400">Admin ID: ${data.admin.adminId}</p>
             </div>
-            <label class="mt-4 mb-2 block text-sm text-slate-300" for="admin-wallet">BTC Wallet Address</label>
-            <input id="admin-wallet" value="${data.admin.btcWalletAddress || ''}" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
-            <label class="mt-4 mb-2 block text-sm text-slate-300" for="admin-password">New Password</label>
-            <input id="admin-password" type="password" placeholder="Leave blank to keep current password" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
-            <button id="save-admin-profile" class="mt-4 rounded-2xl bg-cyan-500 px-4 py-3 font-semibold text-slate-950">Save Profile</button>
-          </div>
-        `;
+            <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+              <label class="mb-2 block text-sm text-slate-300" for="admin-ref-code">Referral Code</label>
+              <input id="admin-ref-code" value="${data.admin.refCode || ''}" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
+              <p class="mt-3 text-sm text-slate-400">Shareable referral link</p>
+              <div class="mt-2 flex flex-col gap-2 sm:flex-row">
+                <input id="referral-link" readonly value="${window.location.origin}/index.html?ref=${encodeURIComponent(data.admin.refCode || '')}" class="flex-1 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
+                <button id="copy-referral-link" class="rounded-2xl border border-cyan-500 px-4 py-3 text-sm font-semibold text-cyan-300">Copy Referral Link</button>
+              </div>
+              <label class="mt-4 mb-2 block text-sm text-slate-300" for="admin-wallet">BTC Wallet Address</label>
+              <input id="admin-wallet" value="${data.admin.btcWalletAddress || ''}" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
+              <label class="mt-4 mb-2 block text-sm text-slate-300" for="admin-password">New Password</label>
+              <input id="admin-password" type="password" placeholder="Leave blank to keep current password" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
+              <button id="save-admin-profile" class="mt-4 rounded-2xl bg-cyan-500 px-4 py-3 font-semibold text-slate-950">Save Profile</button>
+            </div>
+          `;
+        } catch (error) {
+          const container = document.getElementById('admin-profile');
+          container.innerHTML = '<p class="text-sm text-slate-400">Unable to load admin profile.</p>';
+          console.warn('Unable to load admin profile due to a network or server error:', error);
+        }
       }
 
       async function loadClients() {
         const query = document.getElementById('search').value;
-        const response = await fetch(`/api/admin/clients?q=${encodeURIComponent(query)}`, { headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+        const response = await fetch(`/api/admin/clients?q=${encodeURIComponent(query)}`, { headers: getAdminAuthHeaders() });
         const data = await response.json();
         const list = document.getElementById('client-list');
         if (!response.ok) {
@@ -134,7 +171,7 @@
       }
 
       async function loadInvestments() {
-        const response = await fetch('/api/admin/investments', { headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+        const response = await fetch('/api/admin/investments', { headers: getAdminAuthHeaders() });
         const data = await response.json();
         const list = document.getElementById('investment-list');
         if (!response.ok) return;
@@ -160,7 +197,7 @@
       }
 
       async function loadWithdrawals() {
-        const response = await fetch('/api/admin/withdrawals', { headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+        const response = await fetch('/api/admin/withdrawals', { headers: getAdminAuthHeaders() });
         const data = await response.json();
         const list = document.getElementById('withdrawal-list');
         if (!response.ok) return;
@@ -188,7 +225,7 @@
       }
 
       async function loadSupport() {
-        const response = await fetch('/api/admin/messages', { headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+        const response = await fetch('/api/admin/messages', { headers: getAdminAuthHeaders() });
         const data = await response.json();
         const list = document.getElementById('support-list');
         if (!response.ok) return;
@@ -227,24 +264,24 @@
             totalInvestment: document.querySelector(`[data-field="totalInvestment"][data-id="${id}"]`).value,
             payoutDate: document.querySelector(`[data-field="payoutDate"][data-id="${id}"]`).value,
           };
-          const response = await fetch(`/api/admin/clients/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' }, body: JSON.stringify(payload) });
+          const response = await fetch(`/api/admin/clients/${id}`, { method: 'PATCH', headers: getAdminAuthHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(payload) });
           const data = await response.json();
           alert(data.message || 'Client updated');
         }
         if (target.dataset.confirm) {
-          const response = await fetch(`/api/admin/withdrawals/${target.dataset.confirm}/confirm`, { method: 'POST', headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+          const response = await fetch(`/api/admin/withdrawals/${target.dataset.confirm}/confirm`, { method: 'POST', headers: getAdminAuthHeaders() });
           const data = await response.json();
           alert(data.message || 'Confirmed');
           loadWithdrawals();
         }
         if (target.dataset.fail) {
-          const response = await fetch(`/api/admin/withdrawals/${target.dataset.fail}/fail`, { method: 'POST', headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+          const response = await fetch(`/api/admin/withdrawals/${target.dataset.fail}/fail`, { method: 'POST', headers: getAdminAuthHeaders() });
           const data = await response.json();
           alert(data.message || 'Marked failed');
           loadWithdrawals();
         }
         if (target.dataset.delete) {
-          const response = await fetch(`/api/admin/withdrawals/${target.dataset.delete}`, { method: 'DELETE', headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+          const response = await fetch(`/api/admin/withdrawals/${target.dataset.delete}`, { method: 'DELETE', headers: getAdminAuthHeaders() });
           const data = await response.json();
           alert(data.message || 'Deleted');
           loadWithdrawals();
@@ -252,7 +289,7 @@
         if (target.dataset.deleteClient) {
           const confirmed = window.confirm('Delete this client and all associated records?');
           if (!confirmed) return;
-          const response = await fetch(`/api/admin/clients/${target.dataset.deleteClient}`, { method: 'DELETE', headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+          const response = await fetch(`/api/admin/clients/${target.dataset.deleteClient}`, { method: 'DELETE', headers: getAdminAuthHeaders() });
           const data = await response.json();
           alert(data.message || 'Client deleted');
           loadClients();
@@ -261,26 +298,26 @@
         if (target.dataset.replySend) {
           const input = document.querySelector(`[data-reply-id="${target.dataset.replySend}"]`);
           if (!input) return;
-          const response = await fetch('/api/admin/reply', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' }, body: JSON.stringify({ ticketId: target.dataset.replySend, text: input.value }) });
+          const response = await fetch('/api/admin/reply', { method: 'POST', headers: getAdminAuthHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ ticketId: target.dataset.replySend, text: input.value }) });
           const data = await response.json();
           alert(data.message || 'Reply sent');
           loadSupport();
         }
         if (target.dataset.investmentConfirm) {
-          const response = await fetch(`/api/admin/investments/${target.dataset.investmentConfirm}/confirm`, { method: 'POST', headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+          const response = await fetch(`/api/admin/investments/${target.dataset.investmentConfirm}/confirm`, { method: 'POST', headers: getAdminAuthHeaders() });
           const data = await response.json();
           alert(data.message || 'Investment confirmed');
           loadInvestments();
           loadClients();
         }
         if (target.dataset.investmentFail) {
-          const response = await fetch(`/api/admin/investments/${target.dataset.investmentFail}/fail`, { method: 'POST', headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+          const response = await fetch(`/api/admin/investments/${target.dataset.investmentFail}/fail`, { method: 'POST', headers: getAdminAuthHeaders() });
           const data = await response.json();
           alert(data.message || 'Investment failed');
           loadInvestments();
         }
         if (target.dataset.investmentPending) {
-          const response = await fetch(`/api/admin/investments/${target.dataset.investmentPending}/pending`, { method: 'POST', headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+          const response = await fetch(`/api/admin/investments/${target.dataset.investmentPending}/pending`, { method: 'POST', headers: getAdminAuthHeaders() });
           const data = await response.json();
           alert(data.message || 'Investment set pending');
           loadInvestments();
@@ -293,14 +330,15 @@
           const wallet = document.getElementById('admin-wallet').value;
           const refCode = document.getElementById('admin-ref-code').value;
           const password = document.getElementById('admin-password').value;
-          const response = await fetch('/api/admin/profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' }, body: JSON.stringify({ btcWalletAddress: wallet, refCode: refCode || undefined, password: password || undefined }) });
+          const response = await fetch('/api/admin/profile', { method: 'PATCH', headers: getAdminAuthHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ btcWalletAddress: wallet, refCode: refCode || undefined, password: password || undefined }) });
           const data = await response.json();
           alert(data.message || 'Admin profile updated');
           loadAdminProfile();
         }
       });
       document.getElementById('logout-btn').addEventListener('click', async () => {
-        await fetch('/api/admin/logout', { method: 'POST', headers: { 'x-admin-token': document.cookie.split('adminToken=')[1]?.split(';')[0] || '' } });
+        localStorage.removeItem('adminToken');
+        await fetch('/api/admin/logout', { method: 'POST', headers: getAdminAuthHeaders() });
         window.location.href = '/admin/login.html';
       });
 

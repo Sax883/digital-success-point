@@ -133,6 +133,7 @@ app.post('/api/auth/signup', async (req, res) => {
 
     res.status(201).json({
       message: 'Account created successfully. Your $200 signup bonus has been credited.',
+      token: token,
       user: {
         id: user._id,
         name: user.name,
@@ -177,6 +178,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     res.json({
       message: 'Logged in successfully.',
+      token: token,
       user: {
         id: user._id,
         name: user.name,
