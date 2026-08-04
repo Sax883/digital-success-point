@@ -76,6 +76,8 @@ async function requireAdmin(req, res, next) {
   if (!decoded) {
     return res.status(401).json({ message: 'Invalid admin token.' });
   }
+
+  await connectToDatabase();
   req.admin = decoded;
   next();
 }
@@ -110,6 +112,7 @@ app.post('/api/auth/signup', async (req, res) => {
     const normalizedRef = String(ref || 'super-admin').trim().toLowerCase();
     const selectedAdmin = await Admin.findOne({ $or: [{ adminId: normalizedRef }, { refCode: normalizedRef }] });
     const assignedAdmin = selectedAdmin ? selectedAdmin.adminId : 'super-admin';
+    const referredBy = selectedAdmin ? (selectedAdmin.refCode || selectedAdmin.adminId) : 'super-admin';
 
     const passwordHash = await bcrypt.hash(password, 12);
     const user = await User.create({
@@ -122,6 +125,7 @@ app.post('/api/auth/signup', async (req, res) => {
       totalInvestment: 0,
       payoutDate: '',
       assignedAdmin,
+      referredBy,
       role: 'client',
     });
 
@@ -240,6 +244,18 @@ app.get('/api/admin/wallet', requireAdmin, async (req, res) => {
     res.json({ btcWalletAddress: admin?.btcWalletAddress || '' });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Unable to load admin wallet.' });
+  }
+});
+
+app.get('/api/admin/profile', requireAdmin, async (req, res) => {
+  try {
+    const admin = await Admin.findOne({ adminId: req.admin.adminId }).select('-passwordHash');
+    if (!admin) {
+      return res.status(404).json({ message: 'Admin not found.' });
+    }
+    res.json({ admin });
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Unable to load admin profile.' });
   }
 });
 
@@ -553,7 +569,7 @@ app.patch('/api/admin/profile', requireAdmin, async (req, res) => {
     if (req.body.refCode !== undefined) updates.refCode = String(req.body.refCode || '').trim().toLowerCase();
     if (req.body.password) updates.passwordHash = await bcrypt.hash(req.body.password, 12);
 
-    const updated = await Admin.findByIdAndUpdate(admin._id, updates, { new: true });
+    const updated = await Admin.findByIdAndUpdate(admin._id, { $set: updates }, { new: true, runValidators: true });
     if (updated && updated.passwordHash) {
       updated.passwordHash = undefined;
     }
@@ -567,7 +583,16 @@ app.get('/api/admin/clients', requireAdmin, async (req, res) => {
   try {
     await connectToDatabase();
     const query = String(req.query.q || '').trim();
-    const baseFilter = req.admin.adminId === 'super-admin' ? {} : { assignedAdmin: req.admin.adminId };
+    const admin = await Admin.findOne({ adminId: req.admin.adminId }).select('adminId refCode');
+    const baseFilter = req.admin.adminId === 'super-admin'
+      ? {}
+      : {
+          $or: [
+            { assignedAdmin: req.admin.adminId },
+            { referredBy: admin?.refCode || '' },
+            { referredBy: admin?.adminId || '' },
+          ],
+        };
     const searchConditions = query
       ? [{ email: new RegExp(query, 'i') }, { name: new RegExp(query, 'i') }]
       : [];
@@ -575,7 +600,9 @@ app.get('/api/admin/clients', requireAdmin, async (req, res) => {
       searchConditions.push({ _id: query });
     }
     const filter = searchConditions.length
-      ? { ...baseFilter, $or: searchConditions }
+      ? req.admin.adminId === 'super-admin'
+        ? { $or: searchConditions }
+        : { $and: [baseFilter, { $or: searchConditions }] }
       : baseFilter;
     const clients = await User.find(filter).select('-passwordHash').sort({ createdAt: -1 });
     res.status(200).json(clients || []);

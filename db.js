@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema({
   totalInvestment: { type: Number, default: 0 },
   payoutDate: { type: String, default: '' },
   assignedAdmin: { type: String, default: 'super-admin' },
+  referredBy: { type: String, default: 'super-admin' },
   role: { type: String, enum: ['client', 'admin'], default: 'client' },
   createdAt: { type: Date, default: Date.now },
 });
