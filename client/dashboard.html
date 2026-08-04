@@ -324,7 +324,7 @@
       }
 
       async function loadTickets() {
-        const response = await fetch('/api/support/tickets', { credentials: 'include', headers: getAuthHeaders() });
+        const response = await fetch('/api/support/messages', { credentials: 'include', headers: getAuthHeaders() });
         const data = await response.json();
         const list = document.getElementById('support-list');
         if (!response.ok || !data.tickets?.length) {
@@ -333,8 +333,8 @@
         }
         list.innerHTML = data.tickets.map((ticket) => `
           <div class="rounded-2xl border border-slate-800 p-4">
-            <p class="text-sm text-slate-500">${new Date(ticket.createdAt).toLocaleString()}</p>
-            ${ticket.messages.map((msg) => `<p class="mt-2 rounded-xl ${msg.sender === 'admin' ? 'bg-cyan-500/10 text-cyan-300' : 'bg-slate-800 text-slate-200'} px-3 py-2">${msg.text}</p>`).join('')}
+            <p class="text-sm text-slate-500">Ticket: ${ticket._id} • Status: ${ticket.status}</p>
+            ${ticket.messages.map((msg) => `<p class="mt-2 rounded-xl ${msg.sender === 'admin' ? 'bg-cyan-500/10 text-cyan-300' : 'bg-slate-800 text-slate-200'} px-3 py-2"><strong>${msg.sender === 'admin' ? 'Admin' : 'You'}:</strong> ${msg.text}</p>`).join('')}
           </div>
         `).join('');
       }
@@ -370,9 +370,9 @@
         document.getElementById('checkout-modal').classList.add('flex');
 
         try {
-          const response = await fetch('/api/client/checkout-info', { credentials: 'include', headers: getAuthHeaders() });
+          const response = await fetch('/api/settings', { credentials: 'include', headers: getAuthHeaders() });
           const data = await response.json();
-          const address = data?.assignedAdmin?.btcWalletAddress || `bc1q${tier}${Date.now().toString(16).slice(-8)}x9a`;
+          const address = data?.assignedAdmin?.btcWalletAddress || data?.assignedAdmin?.btcWalletAddress || `bc1q${tier}${Date.now().toString(16).slice(-8)}x9a`;
           document.getElementById('checkout-address').textContent = address;
         } catch (error) {
           document.getElementById('checkout-address').textContent = `bc1q${tier}${Date.now().toString(16).slice(-8)}x9a`;
@@ -435,11 +435,11 @@
         }
         const reader = new FileReader();
         reader.onload = async () => {
-          const response = await fetch(`/api/investments/${state.checkoutPurchase._id}/proof`, {
+          const response = await fetch(`/api/investments/proof`, {
             method: 'POST',
             headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
             credentials: 'include',
-            body: JSON.stringify({ proofData: reader.result, proofName: fileInput.files[0].name })
+            body: JSON.stringify({ investmentId: state.checkoutPurchase._id, proofData: reader.result, proofName: fileInput.files[0].name })
           });
           const data = await response.json();
           alert(data.message || 'Proof uploaded');
@@ -578,7 +578,7 @@
       document.getElementById('support-form').addEventListener('submit', async (event) => {
         event.preventDefault();
         const payload = { message: document.getElementById('support-message').value };
-        const response = await fetch('/api/support/ticket', { method: 'POST', headers: getAuthHeaders({ 'Content-Type': 'application/json' }), credentials: 'include', body: JSON.stringify(payload) });
+        const response = await fetch('/api/support/message', { method: 'POST', headers: getAuthHeaders({ 'Content-Type': 'application/json' }), credentials: 'include', body: JSON.stringify(payload) });
         const data = await response.json();
         document.getElementById('support-message').value = '';
         loadTickets();

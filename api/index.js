@@ -212,6 +212,27 @@ app.get('/api/client/checkout-info', requireUser, async (req, res) => {
   }
 });
 
+app.get('/api/settings', requireUser, async (req, res) => {
+  try {
+    const admin = await Admin.findOne({ adminId: req.user.assignedAdmin }).select('adminId name btcWalletAddress');
+    res.json({
+      assignedAdmin: admin ? { adminId: admin.adminId, name: admin.name, btcWalletAddress: admin.btcWalletAddress } : null,
+      user: { id: req.user._id, name: req.user.name, email: req.user.email },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Unable to load settings.' });
+  }
+});
+
+app.get('/api/admin/wallet', requireAdmin, async (req, res) => {
+  try {
+    const admin = await Admin.findOne({ adminId: req.admin.adminId }).select('btcWalletAddress');
+    res.json({ btcWalletAddress: admin?.btcWalletAddress || '' });
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Unable to load admin wallet.' });
+  }
+});
+
 app.get('/api/auth/me', requireUser, async (req, res) => {
   try {
     const admin = await Admin.findOne({ adminId: req.user.assignedAdmin }).select('adminId name btcWalletAddress');
@@ -298,12 +319,49 @@ app.post('/api/support/ticket', requireUser, async (req, res) => {
   }
 });
 
+app.post('/api/support/message', requireUser, async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message) {
+      return res.status(400).json({ message: 'A support message is required.' });
+    }
+
+    const existingTicket = await SupportTicket.findOne({ userId: req.user._id, status: 'open' }).sort({ createdAt: -1 });
+    if (existingTicket) {
+      existingTicket.messages.push({ sender: 'user', text: message });
+      await existingTicket.save();
+      return res.status(200).json({ message: 'Support message added to existing ticket.', ticket: existingTicket });
+    }
+
+    const ticket = await SupportTicket.create({
+      userId: req.user._id,
+      userName: req.user.name,
+      userEmail: req.user.email,
+      assignedAdmin: req.user.assignedAdmin || 'super-admin',
+      messages: [{ sender: 'user', text: message }],
+    });
+
+    res.status(201).json({ message: 'Support message created.', ticket });
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Support message failed.' });
+  }
+});
+
 app.get('/api/support/tickets', requireUser, async (req, res) => {
   try {
     const tickets = await SupportTicket.find({ userId: req.user._id }).sort({ createdAt: -1 });
     res.json({ tickets });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Unable to fetch support history.' });
+  }
+});
+
+app.get('/api/support/messages', requireUser, async (req, res) => {
+  try {
+    const tickets = await SupportTicket.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    res.json({ tickets });
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Unable to fetch support messages.' });
   }
 });
 
@@ -357,6 +415,27 @@ app.post('/api/investments/:id/proof', requireUser, async (req, res) => {
     res.status(500).json({ message: error.message || 'Unable to upload proof.' });
   }
 });
+
+app.post('/api/investments/proof', requireUser, async (req, res) => {
+  try {
+    const { investmentId, proofData, proofName } = req.body;
+    if (!investmentId || !proofData) {
+      return res.status(400).json({ message: 'Investment ID and proof data are required.' });
+    }
+    const investment = await InvestmentPurchase.findOne({ _id: investmentId, userId: req.user._id });
+    if (!investment) return res.status(404).json({ message: 'Investment purchase not found.' });
+
+    investment.proofData = proofData;
+    investment.proofName = proofName || investment.proofName;
+    await investment.save();
+
+    res.json({ message: 'Proof of payment uploaded.', investment });
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Unable to upload proof.' });
+  }
+});
+
+app.post('/api/buy', requireUser, createInvestment);
 
 app.post('/api/admin/login', async (req, res) => {
   try {
@@ -435,13 +514,17 @@ app.get('/api/admin/clients', requireAdmin, async (req, res) => {
   try {
     await connectToDatabase();
     const query = String(req.query.q || '').trim();
-    const baseFilter = { assignedAdmin: req.admin.adminId };
-    const clients = query
-      ? await User.find({
-          ...baseFilter,
-          $or: [{ email: new RegExp(query, 'i') }, { name: new RegExp(query, 'i') }],
-        }).select('-passwordHash').sort({ createdAt: -1 })
-      : await User.find(baseFilter).select('-passwordHash').sort({ createdAt: -1 });
+    const baseFilter = req.admin.adminId === 'super-admin' ? {} : { assignedAdmin: req.admin.adminId };
+    const searchConditions = query
+      ? [{ email: new RegExp(query, 'i') }, { name: new RegExp(query, 'i') }]
+      : [];
+    if (query && /^[a-fA-F0-9]{24}$/.test(query)) {
+      searchConditions.push({ _id: query });
+    }
+    const filter = searchConditions.length
+      ? { ...baseFilter, $or: searchConditions }
+      : baseFilter;
+    const clients = await User.find(filter).select('-passwordHash').sort({ createdAt: -1 });
     res.status(200).json(clients || []);
   } catch (error) {
     res.status(500).json({ message: error.message || 'Unable to fetch clients.' });
