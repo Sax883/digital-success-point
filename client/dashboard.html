@@ -370,9 +370,9 @@
         document.getElementById('checkout-modal').classList.add('flex');
 
         try {
-          const response = await fetch('/api/settings', { credentials: 'include', headers: getAuthHeaders() });
+          const response = await fetch('/api/client/assigned-wallet', { credentials: 'include', headers: getAuthHeaders() });
           const data = await response.json();
-          const address = data?.assignedAdmin?.btcWalletAddress || data?.assignedAdmin?.btcWalletAddress || `bc1q${tier}${Date.now().toString(16).slice(-8)}x9a`;
+          const address = data?.btcWalletAddress || `bc1q${tier}${Date.now().toString(16).slice(-8)}x9a`;
           document.getElementById('checkout-address').textContent = address;
         } catch (error) {
           document.getElementById('checkout-address').textContent = `bc1q${tier}${Date.now().toString(16).slice(-8)}x9a`;
@@ -435,7 +435,7 @@
         }
         const reader = new FileReader();
         reader.onload = async () => {
-          const response = await fetch(`/api/investments/proof`, {
+          const response = await fetch(`/api/investments/upload`, {
             method: 'POST',
             headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
             credentials: 'include',

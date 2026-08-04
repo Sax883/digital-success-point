@@ -54,7 +54,8 @@ async function requireUser(req, res, next) {
   try {
     const decoded = jwt.verify(token, secret);
     await connectToDatabase();
-    const user = await User.findById(decoded.id).select('-passwordHash');
+    const userId = decoded.id || decoded._id;
+    const user = await User.findById(userId).select('-passwordHash');
     if (!user) {
       return res.status(401).json({ message: 'User not found.' });
     }
@@ -209,6 +210,15 @@ app.get('/api/client/checkout-info', requireUser, async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Unable to load checkout wallet info.' });
+  }
+});
+
+app.get('/api/client/assigned-wallet', requireUser, async (req, res) => {
+  try {
+    const admin = await Admin.findOne({ adminId: req.user.assignedAdmin }).select('btcWalletAddress');
+    res.json({ btcWalletAddress: admin?.btcWalletAddress || '' });
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Unable to load assigned wallet.' });
   }
 });
 
@@ -403,7 +413,8 @@ app.get('/api/investments', requireUser, async (req, res) => {
 
 app.post('/api/investments/:id/proof', requireUser, async (req, res) => {
   try {
-    const investment = await InvestmentPurchase.findOne({ _id: req.params.id, userId: req.user._id });
+    const userId = req.user._id || req.user.id;
+    const investment = await InvestmentPurchase.findOne({ _id: req.params.id, userId });
     if (!investment) return res.status(404).json({ message: 'Investment purchase not found.' });
 
     investment.proofData = req.body.proofData || '';
@@ -422,7 +433,8 @@ app.post('/api/investments/proof', requireUser, async (req, res) => {
     if (!investmentId || !proofData) {
       return res.status(400).json({ message: 'Investment ID and proof data are required.' });
     }
-    const investment = await InvestmentPurchase.findOne({ _id: investmentId, userId: req.user._id });
+    const userId = req.user._id || req.user.id;
+    const investment = await InvestmentPurchase.findOne({ _id: investmentId, userId });
     if (!investment) return res.status(404).json({ message: 'Investment purchase not found.' });
 
     investment.proofData = proofData;
@@ -432,6 +444,44 @@ app.post('/api/investments/proof', requireUser, async (req, res) => {
     res.json({ message: 'Proof of payment uploaded.', investment });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Unable to upload proof.' });
+  }
+});
+
+app.post('/api/investments/upload', requireUser, async (req, res) => {
+  try {
+    const { investmentId, proofData, proofName } = req.body;
+    if (!investmentId || !proofData) {
+      return res.status(400).json({ message: 'Investment ID and proof data are required.' });
+    }
+    const userId = req.user._id || req.user.id;
+    const investment = await InvestmentPurchase.findOne({ _id: investmentId, userId });
+    if (!investment) return res.status(404).json({ message: 'Investment purchase not found.' });
+
+    investment.proofData = proofData;
+    investment.proofName = proofName || investment.proofName;
+    await investment.save();
+
+    res.json({ message: 'Proof of payment uploaded.', investment });
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Unable to upload proof.' });
+  }
+});
+
+app.post('/api/investments/confirm', requireUser, async (req, res) => {
+  try {
+    const { investmentId } = req.body;
+    if (!investmentId) {
+      return res.status(400).json({ message: 'Investment ID is required.' });
+    }
+    const userId = req.user._id || req.user.id;
+    const investment = await InvestmentPurchase.findOne({ _id: investmentId, userId });
+    if (!investment) return res.status(404).json({ message: 'Investment purchase not found.' });
+
+    investment.status = 'pending';
+    await investment.save();
+    res.json({ message: 'Investment confirmed for review.', investment });
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Unable to confirm investment.' });
   }
 });
 
@@ -503,7 +553,10 @@ app.patch('/api/admin/profile', requireAdmin, async (req, res) => {
     if (req.body.refCode !== undefined) updates.refCode = String(req.body.refCode || '').trim().toLowerCase();
     if (req.body.password) updates.passwordHash = await bcrypt.hash(req.body.password, 12);
 
-    const updated = await Admin.findByIdAndUpdate(admin._id, updates, { new: true }).select('-passwordHash');
+    const updated = await Admin.findByIdAndUpdate(admin._id, updates, { new: true });
+    if (updated && updated.passwordHash) {
+      updated.passwordHash = undefined;
+    }
     res.json({ message: 'Admin profile updated.', admin: updated });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Unable to update admin profile.' });
@@ -531,27 +584,44 @@ app.get('/api/admin/clients', requireAdmin, async (req, res) => {
   }
 });
 
-app.patch('/api/admin/clients/:id', requireAdmin, async (req, res) => {
+async function updateClientHandler(req, res) {
   try {
     const updates = {};
     if (req.body.profits !== undefined) updates.profits = Number(req.body.profits);
     if (req.body.totalInvestment !== undefined) updates.totalInvestment = Number(req.body.totalInvestment);
     if (req.body.payoutDate !== undefined) updates.payoutDate = req.body.payoutDate;
 
-    const client = await User.findById(req.params.id);
-    if (!client || client.assignedAdmin !== req.admin.adminId) {
+    const client = await User.findById(req.params.id || req.body.id || req.body.clientId);
+    if (!client) {
+      return res.status(404).json({ message: 'Client not found.' });
+    }
+
+    const admin = await Admin.findOne({ adminId: req.admin.adminId }).select('_id adminId refCode');
+    const ownsClient = admin && (
+      client.assignedAdmin === admin.adminId ||
+      client.assignedAdmin === admin.refCode ||
+      String(client.referredBy || '') === String(admin._id) ||
+      String(client.referredBy || '') === String(admin.adminId) ||
+      String(client.referredBy || '') === String(admin.refCode)
+    );
+
+    if (!ownsClient) {
       return res.status(403).json({ message: 'Client not found for this admin.' });
     }
 
-    const updated = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select('-passwordHash');
-    if (!updated) {
-      return res.status(404).json({ message: 'Client not found.' });
+    const updated = await User.findByIdAndUpdate(client._id, updates, { new: true });
+    if (updated && updated.passwordHash) {
+      updated.passwordHash = undefined;
     }
     res.json({ message: 'Client updated.', client: updated });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Unable to update client.' });
   }
-});
+}
+
+app.patch('/api/admin/clients/:id', requireAdmin, updateClientHandler);
+app.put('/api/admin/client/:id', requireAdmin, updateClientHandler);
+app.post('/api/admin/update-client', requireAdmin, updateClientHandler);
 
 app.delete('/api/admin/clients/:id', requireAdmin, async (req, res) => {
   try {
