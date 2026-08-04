@@ -114,7 +114,7 @@ async function registerUser(req, res) {
     const assignedAdmin = selectedAdmin ? selectedAdmin.adminId : 'super-admin';
     const referredBy = selectedAdmin ? (selectedAdmin.refCode || selectedAdmin.adminId) : 'super-admin';
 
-    const passwordHash = await bcrypt.hash(password, 12);
+    const passwordHash = await bcrypt.hash(password, 10);
     const user = new User({
       name,
       email: email.toLowerCase(),
