@@ -95,7 +95,7 @@ app.get('/api/health', async (_req, res) => {
   }
 });
 
-app.post('/api/auth/signup', async (req, res) => {
+async function registerUser(req, res) {
   try {
     await connectToDatabase();
     const { name, email, password, ref } = req.body;
@@ -115,7 +115,7 @@ app.post('/api/auth/signup', async (req, res) => {
     const referredBy = selectedAdmin ? (selectedAdmin.refCode || selectedAdmin.adminId) : 'super-admin';
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const user = await User.create({
+    const user = new User({
       name,
       email: email.toLowerCase(),
       passwordHash,
@@ -128,6 +128,7 @@ app.post('/api/auth/signup', async (req, res) => {
       referredBy,
       role: 'client',
     });
+    await user.save();
 
     const token = signToken({ id: user._id, role: user.role });
     res.cookie('token', token, {
@@ -138,7 +139,7 @@ app.post('/api/auth/signup', async (req, res) => {
 
     res.status(201).json({
       message: 'Account created successfully. Your $200 signup bonus has been credited.',
-      token: token,
+      token,
       user: {
         id: user._id,
         name: user.name,
@@ -153,7 +154,10 @@ app.post('/api/auth/signup', async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message || 'Signup failed.' });
   }
-});
+}
+
+app.post('/api/auth/signup', registerUser);
+app.post('/api/auth/register', registerUser);
 
 app.post('/api/auth/login', async (req, res) => {
   try {
@@ -183,7 +187,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     res.json({
       message: 'Logged in successfully.',
-      token: token,
+      token,
       user: {
         id: user._id,
         name: user.name,
@@ -520,7 +524,7 @@ app.post('/api/admin/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid admin credentials.' });
     }
 
-    const token = signToken({ role: 'admin', adminId: admin.adminId, email: admin.email });
+    const token = signToken({ id: admin._id, role: 'admin', adminId: admin.adminId, email: admin.email });
     res.cookie('adminToken', token, {
       httpOnly: true,
       sameSite: 'lax',
@@ -584,26 +588,27 @@ app.get('/api/admin/clients', requireAdmin, async (req, res) => {
     await connectToDatabase();
     const query = String(req.query.q || '').trim();
     const admin = await Admin.findOne({ adminId: req.admin.adminId }).select('adminId refCode');
-    const baseFilter = req.admin.adminId === 'super-admin'
-      ? {}
-      : {
-          $or: [
-            { assignedAdmin: req.admin.adminId },
-            { referredBy: admin?.refCode || '' },
-            { referredBy: admin?.adminId || '' },
-          ],
-        };
+    const clientFilter = { role: 'client' };
+
+    if (req.admin.adminId !== 'super-admin') {
+      clientFilter.$or = [
+        { assignedAdmin: req.admin.adminId },
+        { referredBy: admin?.refCode || '' },
+        { referredBy: admin?.adminId || '' },
+      ];
+    }
+
     const searchConditions = query
       ? [{ email: new RegExp(query, 'i') }, { name: new RegExp(query, 'i') }]
       : [];
     if (query && /^[a-fA-F0-9]{24}$/.test(query)) {
       searchConditions.push({ _id: query });
     }
+
     const filter = searchConditions.length
-      ? req.admin.adminId === 'super-admin'
-        ? { $or: searchConditions }
-        : { $and: [baseFilter, { $or: searchConditions }] }
-      : baseFilter;
+      ? { $and: [clientFilter, { $or: searchConditions }] }
+      : clientFilter;
+
     const clients = await User.find(filter).select('-passwordHash').sort({ createdAt: -1 });
     res.status(200).json(clients || []);
   } catch (error) {

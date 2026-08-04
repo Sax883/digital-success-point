@@ -251,8 +251,18 @@
       const state = { user: null, selectedTier: null, checkoutPurchase: null };
       const tierPrices = { 1: 500, 2: 1000, 3: 2500, 4: 4000, 5: 5000, 6: 6500, 7: 9000 };
 
+      function getClientToken() {
+        const token = localStorage.getItem('token');
+        if (!token || token === 'undefined') {
+          localStorage.removeItem('token');
+          window.location.href = '/login.html';
+          return null;
+        }
+        return token;
+      }
+
       function getAuthHeaders(extra = {}) {
-        const token = localStorage.getItem('token') || '';
+        const token = getClientToken();
         return {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...extra,
@@ -290,9 +300,8 @@
       });
 
       async function loadProfile() {
-        const token = localStorage.getItem('token') || '';
+        const token = getClientToken();
         if (!token) {
-          window.location.href = '/login.html';
           return;
         }
 

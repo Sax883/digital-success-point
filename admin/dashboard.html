@@ -49,8 +49,18 @@
       </div>
     </div>
     <script>
+      function getAdminToken() {
+        const token = localStorage.getItem('adminToken');
+        if (!token || token === 'undefined') {
+          localStorage.removeItem('adminToken');
+          window.location.href = '/admin/login.html';
+          return null;
+        }
+        return token;
+      }
+
       function getAdminAuthHeaders(extra = {}) {
-        const token = localStorage.getItem('adminToken') || '';
+        const token = getAdminToken();
         return {
           ...(token ? { Authorization: `Bearer ${token}`, 'x-admin-token': token } : {}),
           ...extra,
@@ -66,9 +76,8 @@
       }
 
       async function checkAdmin() {
-        const token = localStorage.getItem('adminToken') || '';
+        const token = getAdminToken();
         if (!token) {
-          window.location.href = '/admin/login.html';
           return;
         }
 
@@ -87,9 +96,8 @@
       }
 
       async function loadAdminProfile() {
-        const token = localStorage.getItem('adminToken') || '';
+        const token = getAdminToken();
         if (!token) {
-          window.location.href = '/admin/login.html';
           return;
         }
 
