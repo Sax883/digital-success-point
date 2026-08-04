@@ -57,6 +57,14 @@
         };
       }
 
+      function getReferralOrigin() {
+        const hostname = window.location.hostname.toLowerCase();
+        if (hostname.includes('-git-')) {
+          return 'https://digital-success-point.vercel.app';
+        }
+        return window.location.origin;
+      }
+
       async function checkAdmin() {
         const token = localStorage.getItem('adminToken') || '';
         if (!token) {
@@ -108,7 +116,7 @@
               <input id="admin-ref-code" value="${data.admin.refCode || ''}" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
               <p class="mt-3 text-sm text-slate-400">Shareable referral link</p>
               <div class="mt-2 flex flex-col gap-2 sm:flex-row">
-                <input id="referral-link" readonly value="${window.location.origin}/index.html${data.admin.refCode ? `?ref=${encodeURIComponent(data.admin.refCode)}` : ''}" class="flex-1 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
+                <input id="referral-link" readonly value="${getReferralOrigin()}/index.html${data.admin.refCode ? `?ref=${encodeURIComponent(data.admin.refCode)}` : ''}" class="flex-1 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
                 <button id="copy-referral-link" class="rounded-2xl border border-cyan-500 px-4 py-3 text-sm font-semibold text-cyan-300">Copy Referral Link</button>
               </div>
               <label class="mt-4 mb-2 block text-sm text-slate-300" for="admin-wallet">BTC Wallet Address</label>
