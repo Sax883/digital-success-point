@@ -125,13 +125,18 @@ async function registerUser(req, res) {
 
     let assignedAdmin = 'super-admin';
     let referredBy = 'super-admin';
+
     if (rawRef) {
       const normalizedRef = rawRef.toLowerCase();
       const selectedAdmin = await Admin.findOne({ $or: [{ adminId: normalizedRef }, { refCode: normalizedRef }, { _id: normalizedRef }] });
+      const selectedUser = await User.findOne({ referralCode: normalizedRef });
+      const referrer = selectedAdmin || selectedUser;
+
+      referredBy = referrer ? String(referrer._id) : null;
       if (selectedAdmin) {
         assignedAdmin = selectedAdmin.adminId || 'super-admin';
-        // store the admin's ObjectId (string) in referredBy for clarity
-        referredBy = String(selectedAdmin._id);
+      } else if (selectedUser) {
+        assignedAdmin = selectedUser.assignedAdmin || 'super-admin';
       }
     }
 
@@ -293,6 +298,7 @@ app.get('/api/auth/me', requireUser, async (req, res) => {
     const admin = await Admin.findOne({ adminId: req.user.assignedAdmin }).select('adminId name btcWalletAddress');
     const safeUser = req.user.toObject ? req.user.toObject() : req.user;
     res.json({
+      success: true,
       user: {
         ...safeUser,
         assignedAdmin: admin ? { adminId: admin.adminId, name: admin.name, btcWalletAddress: admin.btcWalletAddress } : null,
