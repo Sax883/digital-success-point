@@ -26,12 +26,19 @@ function signToken(payload) {
   return jwt.sign(payload, secret, { expiresIn: '7d' });
 }
 
+function getBearerTokenFromHeader(req) {
+  const authorization = req.get('authorization');
+  if (!authorization || typeof authorization !== 'string') return null;
+  const [scheme, token] = authorization.trim().split(/\s+/);
+  return /^Bearer$/i.test(scheme) ? token : authorization.trim();
+}
+
 function getToken(req) {
-  return req.cookies.token || req.headers.authorization?.replace('Bearer ', '');
+  return req.cookies.token || getBearerTokenFromHeader(req);
 }
 
 function getAdminToken(req) {
-  return req.cookies.adminToken || req.headers['x-admin-token'] || req.headers.authorization?.replace('Bearer ', '');
+  return req.cookies.adminToken || req.headers['x-admin-token'] || getBearerTokenFromHeader(req);
 }
 
 async function resolveAdminFromToken(token) {
@@ -62,6 +69,7 @@ async function requireUser(req, res, next) {
     req.user = user;
     next();
   } catch (error) {
+    console.error('User token verification failed:', error.message);
     return res.status(401).json({ message: 'Invalid token.' });
   }
 }

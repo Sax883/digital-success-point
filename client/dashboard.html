@@ -409,7 +409,7 @@
         }
 
         try {
-          const response = await fetch('/api/auth/me', { credentials: 'include', headers: { Authorization: `Bearer ${token}` } });
+          const response = await fetch('/api/auth/me', { credentials: 'include', headers: getAuthHeaders({ 'Content-Type': 'application/json' }) });
           if (response.status === 401) {
             window.location.href = '/login.html';
             return;
@@ -615,7 +615,7 @@
       async function validateAuth(token) {
         if (!token || token === 'undefined' || token === 'null') return false;
         try {
-          const res = await fetch('/api/auth/me', { credentials: 'include', headers: { Authorization: `Bearer ${token}` } });
+          const res = await fetch('/api/auth/me', { credentials: 'include', headers: getAuthHeaders({ 'Content-Type': 'application/json' }) });
           if (res.status === 401) {
             window.location.href = '/login.html';
             return false;
