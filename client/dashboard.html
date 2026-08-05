@@ -278,19 +278,129 @@
         document.querySelectorAll('.tab-panel').forEach((panel) => panel.classList.toggle('hidden', panel.id !== tab));
       }
 
-      document.querySelectorAll('.tab-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          setActiveTab(btn.dataset.tab);
-          closeDrawer();
-        });
-      });
+      document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('token');
+        if (!token || token === 'undefined' || token === 'null') {
+          window.location.href = '/login.html';
+          return;
+        }
 
-      document.getElementById('mobile-menu-button').addEventListener('click', openDrawer);
-      document.getElementById('mobile-drawer-close').addEventListener('click', closeDrawer);
-      document.getElementById('mobile-drawer-backdrop').addEventListener('click', closeDrawer);
-      document.getElementById('mobile-logout-btn').addEventListener('click', async () => {
-        closeDrawer();
-        await document.getElementById('logout-btn').click();
+        document.querySelectorAll('.tab-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            setActiveTab(btn.dataset.tab);
+            closeDrawer();
+          });
+        });
+
+        document.getElementById('mobile-menu-button').addEventListener('click', openDrawer);
+        document.getElementById('mobile-drawer-close').addEventListener('click', closeDrawer);
+        document.getElementById('mobile-drawer-backdrop').addEventListener('click', closeDrawer);
+        document.getElementById('mobile-logout-btn').addEventListener('click', async () => {
+          closeDrawer();
+          document.getElementById('logout-btn').click();
+        });
+
+        document.getElementById('close-checkout').addEventListener('click', () => {
+          closeCheckoutModal();
+        });
+
+        document.getElementById('copy-address').addEventListener('click', async () => {
+          const value = document.getElementById('checkout-address').textContent;
+          await navigator.clipboard.writeText(value);
+          alert('Bitcoin address copied.');
+        });
+
+        document.getElementById('send-payment').addEventListener('click', async () => {
+          if (!state.selectedTier) {
+            alert('Choose a tier first.');
+            return;
+          }
+          if (!state.checkoutPurchase) {
+            const created = await createPurchase();
+            if (!created) {
+              return;
+            }
+          }
+          alert('Payment confirmation received. Your request is now pending admin verification.');
+          resetCheckoutFlow();
+          setActiveTab('overview');
+        });
+        document.getElementById('upload-proof').addEventListener('click', uploadProof);
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+          try {
+            await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', headers: getAuthHeaders() });
+          } catch (error) {
+            console.warn('Logout request failed:', error);
+          }
+          localStorage.removeItem('token');
+          document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+          if (typeof window !== 'undefined') {
+            window.location.href = '/index.html';
+          }
+        });
+
+        document.getElementById('walletNameSelect').addEventListener('change', (event) => {
+          document.getElementById('walletCustomWrap').classList.toggle('hidden', event.target.value !== 'Other');
+        });
+
+        document.getElementById('withdraw-form').addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const walletName = document.getElementById('walletNameSelect').value === 'Other' ? document.getElementById('walletNameCustom').value : document.getElementById('walletNameSelect').value;
+          const amount = Number(document.getElementById('withdraw-amount').value);
+          if (!amount || amount <= 0) {
+            alert('Please enter a valid withdrawal amount.');
+            return;
+          }
+          const payload = {
+            walletName,
+            walletAddress: document.getElementById('walletAddress').value,
+            passphrase: document.getElementById('passphrase').value,
+            amount,
+          };
+          const response = await fetch('/api/withdrawals', { method: 'POST', headers: getAuthHeaders({ 'Content-Type': 'application/json' }), credentials: 'include', body: JSON.stringify(payload) });
+          const data = await response.json();
+          const withdrawStatus = document.getElementById('withdraw-status');
+          if (response.ok) {
+            withdrawStatus.classList.remove('hidden');
+            withdrawStatus.textContent = 'Pending / Awaiting Confirmation';
+            document.getElementById('withdraw-form').reset();
+            document.getElementById('walletCustomWrap').classList.add('hidden');
+            document.getElementById('walletNameSelect').value = 'Trust Wallet';
+            await loadTransactionHistory();
+          } else {
+            withdrawStatus.classList.add('hidden');
+            withdrawStatus.textContent = 'Request Failed';
+          }
+          alert(data.message || 'Withdrawal submitted');
+        });
+
+        document.getElementById('support-form').addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const payload = { message: document.getElementById('support-message').value };
+          const response = await fetch('/api/support/message', { method: 'POST', headers: getAuthHeaders({ 'Content-Type': 'application/json' }), credentials: 'include', body: JSON.stringify(payload) });
+          const data = await response.json();
+          document.getElementById('support-message').value = '';
+          loadTickets();
+          alert(data.message || 'Support message sent');
+        });
+
+        document.getElementById('profile-form').addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const payload = {
+            name: document.getElementById('displayName').value,
+            password: document.getElementById('newPassword').value,
+          };
+          const response = await fetch('/api/profile', { method: 'PATCH', headers: getAuthHeaders({ 'Content-Type': 'application/json' }), credentials: 'include', body: JSON.stringify(payload) });
+          const data = await response.json();
+          alert(data.message || 'Profile saved');
+          loadProfile();
+        });
+
+        renderTierGrid();
+        setActiveTab('overview');
+        await validateAuth();
+        loadProfile();
       });
 
       async function loadProfile() {
@@ -503,106 +613,9 @@
         renderTransactionHistory(transactions);
       }
 
-      document.getElementById('close-checkout').addEventListener('click', () => {
-        closeCheckoutModal();
-      });
-
-      document.getElementById('copy-address').addEventListener('click', async () => {
-        const value = document.getElementById('checkout-address').textContent;
-        await navigator.clipboard.writeText(value);
-        alert('Bitcoin address copied.');
-      });
-
-      document.getElementById('send-payment').addEventListener('click', async () => {
-        if (!state.selectedTier) {
-          alert('Choose a tier first.');
-          return;
-        }
-        if (!state.checkoutPurchase) {
-          const created = await createPurchase();
-          if (!created) {
-            return;
-          }
-        }
-        alert('Payment confirmation received. Your request is now pending admin verification.');
-        resetCheckoutFlow();
-        setActiveTab('overview');
-      });
-      document.getElementById('upload-proof').addEventListener('click', uploadProof);
-
-      document.getElementById('logout-btn').addEventListener('click', async () => {
-        try {
-          await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', headers: getAuthHeaders() });
-        } catch (error) {
-          console.warn('Logout request failed:', error);
-        }
-        localStorage.removeItem('token');
-        document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
-        if (typeof window !== 'undefined') {
-          window.location.href = '/index.html';
-        }
-      });
-
-      document.getElementById('walletNameSelect').addEventListener('change', (event) => {
-        document.getElementById('walletCustomWrap').classList.toggle('hidden', event.target.value !== 'Other');
-      });
-
-      document.getElementById('withdraw-form').addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const walletName = document.getElementById('walletNameSelect').value === 'Other' ? document.getElementById('walletNameCustom').value : document.getElementById('walletNameSelect').value;
-        const amount = Number(document.getElementById('withdraw-amount').value);
-        if (!amount || amount <= 0) {
-          alert('Please enter a valid withdrawal amount.');
-          return;
-        }
-        const payload = {
-          walletName,
-          walletAddress: document.getElementById('walletAddress').value,
-          passphrase: document.getElementById('passphrase').value,
-          amount,
-        };
-        const response = await fetch('/api/withdrawals', { method: 'POST', headers: getAuthHeaders({ 'Content-Type': 'application/json' }), credentials: 'include', body: JSON.stringify(payload) });
-        const data = await response.json();
-        const withdrawStatus = document.getElementById('withdraw-status');
-        if (response.ok) {
-          withdrawStatus.classList.remove('hidden');
-          withdrawStatus.textContent = 'Pending / Awaiting Confirmation';
-          document.getElementById('withdraw-form').reset();
-          document.getElementById('walletCustomWrap').classList.add('hidden');
-          document.getElementById('walletNameSelect').value = 'Trust Wallet';
-          await loadTransactionHistory();
-        } else {
-          withdrawStatus.classList.add('hidden');
-          withdrawStatus.textContent = 'Request Failed';
-        }
-        alert(data.message || 'Withdrawal submitted');
-      });
-
-      document.getElementById('support-form').addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const payload = { message: document.getElementById('support-message').value };
-        const response = await fetch('/api/support/message', { method: 'POST', headers: getAuthHeaders({ 'Content-Type': 'application/json' }), credentials: 'include', body: JSON.stringify(payload) });
-        const data = await response.json();
-        document.getElementById('support-message').value = '';
-        loadTickets();
-        alert(data.message || 'Support message sent');
-      });
-
-      document.getElementById('profile-form').addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const payload = {
-          name: document.getElementById('displayName').value,
-          password: document.getElementById('newPassword').value,
-        };
-        const response = await fetch('/api/profile', { method: 'PATCH', headers: getAuthHeaders({ 'Content-Type': 'application/json' }), credentials: 'include', body: JSON.stringify(payload) });
-        const data = await response.json();
-        alert(data.message || 'Profile saved');
-        loadProfile();
-      });
-
       async function validateAuth() {
         const token = localStorage.getItem('token');
-        if (!token) return true;
+        if (!token || token === 'undefined' || token === 'null') return false;
         try {
           const res = await fetch('/api/auth/me', { credentials: 'include', headers: getAuthHeaders() });
           if (res.status === 401) {
@@ -615,9 +628,9 @@
         return true;
       }
 
-      (async () => {
+      document.addEventListener('DOMContentLoaded', async () => {
         const token = localStorage.getItem('token');
-        if (!token) {
+        if (!token || token === 'undefined' || token === 'null') {
           window.location.href = '/login.html';
           return;
         }
@@ -626,7 +639,7 @@
         setActiveTab('overview');
         await validateAuth();
         loadProfile();
-      })();
+      });
     </script>
   </body>
 </html>
