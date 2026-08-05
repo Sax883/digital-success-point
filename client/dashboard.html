@@ -253,8 +253,8 @@
 
       function getClientToken() {
         const token = localStorage.getItem('token');
-        if (!token || token === 'undefined') {
-          localStorage.removeItem('token');
+        // Only redirect if token is truly missing (null). Do not clear localStorage here.
+        if (token === null) {
           window.location.href = '/login.html';
           return null;
         }
@@ -606,9 +606,26 @@
         loadProfile();
       });
 
-      renderTierGrid();
-      setActiveTab('overview');
-      loadProfile();
+      async function validateAuth() {
+        const token = getClientToken();
+        if (!token) return;
+        try {
+          const res = await fetch('/api/auth/me', { credentials: 'include', headers: getAuthHeaders() });
+          if (res.status === 401) {
+            window.location.href = '/login.html';
+            return;
+          }
+        } catch (err) {
+          // network issues - allow loadProfile to handle retries
+        }
+      }
+
+      (async () => {
+        await validateAuth();
+        renderTierGrid();
+        setActiveTab('overview');
+        loadProfile();
+      })();
     </script>
   </body>
 </html>

@@ -36,7 +36,7 @@
         };
         const response = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         const data = await response.json();
-        if (response.ok && data.token) {
+        if (response.ok && data.success) {
           localStorage.setItem('adminToken', data.token);
           window.location.href = '/admin/dashboard.html';
         } else {

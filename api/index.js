@@ -137,8 +137,7 @@ async function registerUser(req, res) {
       secure: process.env.NODE_ENV === 'production',
     });
 
-    res.status(201).json({
-      message: 'Account created successfully. Your $200 signup bonus has been credited.',
+    return res.status(201).json({
       token,
       user: {
         id: user._id,
@@ -173,12 +172,12 @@ app.post('/api/auth/login', async (req, res) => {
 
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password.' });
+      return res.status(401).json({ success: false, message: 'Invalid email or password.' });
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
-      return res.status(401).json({ message: 'Invalid email or password.' });
+      return res.status(401).json({ success: false, message: 'Invalid email or password.' });
     }
 
     const token = signToken({ id: user._id, role: user.role });
@@ -188,8 +187,8 @@ app.post('/api/auth/login', async (req, res) => {
       secure: process.env.NODE_ENV === 'production',
     });
 
-    res.json({
-      message: 'Logged in successfully.',
+    return res.json({
+      success: true,
       token,
       user: {
         id: user._id,
@@ -204,7 +203,7 @@ app.post('/api/auth/login', async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message || 'Login failed.' });
+    res.status(500).json({ success: false, message: error.message || 'Login failed.' });
   }
 });
 
@@ -514,17 +513,17 @@ app.post('/api/admin/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required.' });
+      return res.status(400).json({ success: false, message: 'Email and password are required.' });
     }
 
     const admin = await Admin.findOne({ email: email.toLowerCase() });
     if (!admin) {
-      return res.status(401).json({ message: 'Invalid admin credentials.' });
+      return res.status(401).json({ success: false, message: 'Invalid admin credentials.' });
     }
 
     const valid = await bcrypt.compare(password, admin.passwordHash);
     if (!valid) {
-      return res.status(401).json({ message: 'Invalid admin credentials.' });
+      return res.status(401).json({ success: false, message: 'Invalid admin credentials.' });
     }
 
     const token = signToken({ id: admin._id, role: 'admin', adminId: admin.adminId, email: admin.email });
@@ -534,12 +533,13 @@ app.post('/api/admin/login', async (req, res) => {
       secure: process.env.NODE_ENV === 'production',
     });
     return res.json({
+      success: true,
       message: 'Admin access granted.',
       token,
       admin: { adminId: admin.adminId, refCode: admin.refCode, name: admin.name, email: admin.email, btcWalletAddress: admin.btcWalletAddress },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message || 'Admin login failed.' });
+    res.status(500).json({ success: false, message: error.message || 'Admin login failed.' });
   }
 });
 
