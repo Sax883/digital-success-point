@@ -76,6 +76,10 @@ function normalizePayloadId(value) {
   return '';
 }
 
+function escapeRegex(input) {
+  return String(input || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 async function requireUser(req, res, next) {
   const headerToken = getBearerTokenFromHeader(req);
   const cookieToken = isSafeToken(req.cookies?.token) ? req.cookies.token : null;
@@ -139,13 +143,30 @@ async function requireUser(req, res, next) {
 
 // Helper: resolve the authoritative user document for the current request
 async function fetchUserDocument(req) {
-  if (!req || !req.user) return null;
+  if (!req) return null;
   await connectToDatabase();
   const u = req.user || {};
   const candidates = [];
   if (u._id) candidates.push({ _id: String(u._id) });
   if (u.id) candidates.push({ _id: String(u.id) });
   if (u.email) candidates.push({ email: String(u.email).toLowerCase().trim() });
+
+  // Fallback: try decoding token from header or cookie when req.user doesn't have identifiers
+  if (candidates.length === 0) {
+    try {
+      const token = getToken(req);
+      if (token) {
+        const decoded = jwt.verify(token, secret);
+        const payloadId = normalizePayloadId(decoded.id || decoded._id || decoded.sub || decoded.userId);
+        const payloadEmail = (decoded.email || (decoded.user && decoded.user.email) || decoded.emailAddress) || '';
+        if (payloadId) candidates.push({ _id: payloadId });
+        if (payloadEmail) candidates.push({ email: String(payloadEmail).toLowerCase().trim() });
+      }
+    } catch (err) {
+      // ignore
+    }
+  }
+
   if (candidates.length === 0) return null;
   const found = await User.findOne({ $or: candidates }).select('-passwordHash -password');
   return found;
@@ -760,7 +781,7 @@ app.get('/api/admin/clients', requireAdmin, async (req, res) => {
     }
 
     const searchConditions = query
-      ? [{ email: new RegExp(query, 'i') }, { name: new RegExp(query, 'i') }]
+      ? [{ email: new RegExp(escapeRegex(query), 'i') }, { name: new RegExp(escapeRegex(query), 'i') }]
       : [];
     if (query && /^[a-fA-F0-9]{24}$/.test(query)) {
       searchConditions.push({ _id: query });

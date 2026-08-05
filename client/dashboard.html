@@ -279,7 +279,8 @@
 
       async function validateSession() {
         try {
-          const response = await fetch('/api/auth/me', { method: 'GET', headers: getAuthHeaders() });
+          // Do not include Authorization header here; prefer cookie-based session validation.
+          const response = await fetch('/api/auth/me', { method: 'GET' });
           if (response.status === 401) {
             return false;
           }
@@ -469,10 +470,8 @@
         }
 
         try {
-          const response = await fetch('/api/auth/me', {
-            method: 'GET',
-            headers: getAuthHeaders()
-          });
+          // Use cookie-based profile fetch so server-side token (cookie) is authoritative.
+          const response = await fetch('/api/auth/me', { method: 'GET' });
 
           // Redirect to login only on 401 Unauthorized status
           if (response.status === 401) {
