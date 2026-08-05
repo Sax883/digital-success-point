@@ -15,7 +15,7 @@ const {
 } = require('../db');
 
 const app = express();
-const secret = process.env.JWT_SECRET || 'digital-success-point-secret';
+const secret = process.env.JWT_SECRET || 'digital-success-point-secret-key-2026';
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
