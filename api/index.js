@@ -67,10 +67,17 @@ async function requireUser(req, res, next) {
     }
 
     await connectToDatabase();
-    const user = await User.findById(userId).select('-passwordHash');
-    if (!user) {
-      return res.status(401).json({ message: 'User not found.' });
+    
+    // Fallback selection to prevent Mongoose schema crashes
+    let user = await User.findById(userId).select('-passwordHash -password');
+    if (!user && /^[a-fA-F0-9]{24}$/.test(userId)) {
+      user = await User.findOne({ _id: userId }).select('-passwordHash -password');
     }
+
+    if (!user) {
+      return res.status(401).json({ message: 'User not found in database.' });
+    }
+    
     req.user = user;
     next();
   } catch (error) {
