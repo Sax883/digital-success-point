@@ -157,7 +157,7 @@ async function registerUser(req, res) {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = new User({
+    const user = await User.create({
       name,
       email: email.toLowerCase(),
       passwordHash,
@@ -170,7 +170,6 @@ async function registerUser(req, res) {
       referredBy,
       role: 'client',
     });
-    await user.save();
 
     const userIdStr = user._id ? user._id.toString() : '';
     const token = signToken({ id: userIdStr, email: user.email }); // ID is safely stringified here
