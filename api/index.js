@@ -60,8 +60,12 @@ async function requireUser(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, secret);
+    const userId = decoded.id || decoded.userId || decoded._id;
+    if (!userId) {
+      return res.status(401).json({ message: 'Invalid token payload.' });
+    }
+
     await connectToDatabase();
-    const userId = decoded.id || decoded._id;
     const user = await User.findById(userId).select('-passwordHash');
     if (!user) {
       return res.status(401).json({ message: 'User not found.' });
@@ -147,7 +151,7 @@ async function registerUser(req, res) {
     });
     await user.save();
 
-    const token = jwt.sign({ id: user._id }, secret, { expiresIn: '7d' });
+    const token = signToken({ id: user._id, email: user.email });
     res.cookie('token', token, {
       httpOnly: true,
       sameSite: 'lax',
@@ -199,7 +203,7 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid email or password' });
     }
 
-    const token = jwt.sign({ id: user._id }, secret, { expiresIn: '7d' });
+    const token = signToken({ id: user._id, email: user.email });
     res.cookie('token', token, {
       httpOnly: true,
       sameSite: 'lax',
