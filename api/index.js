@@ -77,13 +77,30 @@ function normalizePayloadId(value) {
 }
 
 async function requireUser(req, res, next) {
-  const token = getToken(req);
-  if (!token) {
+  const headerToken = getBearerTokenFromHeader(req);
+  const cookieToken = isSafeToken(req.cookies?.token) ? req.cookies.token : null;
+  if (!headerToken && !cookieToken) {
     return res.status(401).json({ message: 'Authentication required.' });
   }
 
+  let decoded = null;
+  let token = null;
+  const tokenCandidates = [headerToken, cookieToken].filter(Boolean);
+  for (const candidate of tokenCandidates) {
+    try {
+      decoded = jwt.verify(candidate, secret);
+      token = candidate;
+      break;
+    } catch (error) {
+      // Try the next token candidate.
+    }
+  }
+
+  if (!decoded) {
+    return res.status(401).json({ message: 'Invalid or expired token.' });
+  }
+
   try {
-    const decoded = jwt.verify(token, secret);
     const tokenUser = decoded.user || decoded;
     const userId = decoded.id || decoded.userId || decoded._id || decoded.sub || (tokenUser && (tokenUser.id || tokenUser._id));
     const userEmail = decoded.email || (tokenUser && tokenUser.email) || decoded.emailAddress;
@@ -209,6 +226,7 @@ async function registerUser(req, res) {
     const token = signToken({ id: userIdStr, email: user.email }); // ID is safely stringified here
     res.cookie('token', token, {
       httpOnly: true,
+      path: '/',
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
     });
@@ -264,6 +282,7 @@ app.post('/api/auth/login', async (req, res) => {
     const token = signToken({ id: userIdStr, email: user.email }); // ID is safely stringified here
     res.cookie('token', token, {
       httpOnly: true,
+      path: '/',
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
     });
@@ -290,7 +309,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 app.post('/api/auth/logout', (_req, res) => {
-  res.clearCookie('token');
+  res.clearCookie('token', { path: '/' });
   res.json({ message: 'Logged out.' });
 });
 
@@ -623,6 +642,7 @@ app.post('/api/admin/login', async (req, res) => {
     const token = signToken({ id: admin._id, role: 'admin', adminId: admin.adminId, email: admin.email });
     res.cookie('adminToken', token, {
       httpOnly: true,
+      path: '/',
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
     });
@@ -638,7 +658,7 @@ app.post('/api/admin/login', async (req, res) => {
 });
 
 app.post('/api/admin/logout', (_req, res) => {
-  res.clearCookie('adminToken');
+  res.clearCookie('adminToken', { path: '/' });
   res.json({ message: 'Admin logged out.' });
 });
 

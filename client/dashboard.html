@@ -463,8 +463,10 @@
       });
 
       async function loadProfile() {
-        const token = localStorage.getItem('token');
-        if (!token) return;
+        const token = String(localStorage.getItem('token') || '').trim();
+        if (!token || token === 'undefined' || token === 'null') {
+          // If no localStorage token is present, still attempt profile fetch using cookie auth.
+        }
 
         try {
           const response = await fetch('/api/auth/me', {
