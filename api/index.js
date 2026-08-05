@@ -172,7 +172,7 @@ async function registerUser(req, res) {
     });
     await user.save();
 
-    const userIdStr = user._id.toString();
+    const userIdStr = user._id ? user._id.toString() : '';
     const token = signToken({ id: userIdStr, email: user.email }); // ID is safely stringified here
     res.cookie('token', token, {
       httpOnly: true,
@@ -180,7 +180,6 @@ async function registerUser(req, res) {
       secure: process.env.NODE_ENV === 'production',
     });
 
-    const userIdStr = user._id ? user._id.toString() : '';
     return res.status(201).json({
       success: true,
       token,
@@ -227,7 +226,7 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid email or password' });
     }
 
-    const userIdStr = user._id.toString();
+    const userIdStr = user._id ? user._id.toString() : '';
     const token = signToken({ id: userIdStr, email: user.email }); // ID is safely stringified here
     res.cookie('token', token, {
       httpOnly: true,
@@ -235,7 +234,6 @@ app.post('/api/auth/login', async (req, res) => {
       secure: process.env.NODE_ENV === 'production',
     });
 
-    const userIdStr = user._id ? user._id.toString() : '';
     return res.json({
       success: true,
       token,
