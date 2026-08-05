@@ -1,2 +1,4 @@
 node_modules/
 .env
+client_cookies.txt
+admin_cookies.txt
