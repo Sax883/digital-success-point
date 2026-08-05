@@ -123,7 +123,7 @@
               <input id="admin-ref-code" value="${data.admin.refCode || ''}" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
               <p class="mt-3 text-sm text-slate-400">Shareable referral link</p>
               <div class="mt-2 flex flex-col gap-2 sm:flex-row">
-                <input id="referral-link" readonly value="https://${window.location.host}/signup.html${data.admin.referralCode || data.admin.refCode ? `?ref=${encodeURIComponent(data.admin.referralCode || data.admin.refCode)}` : ''}" class="flex-1 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
+                <input id="referral-link" readonly value="https://${window.location.host}/?ref=${encodeURIComponent(data.admin.referralCode || data.admin.refCode || '')}" class="flex-1 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3" />
                 <button id="copy-referral-link" class="rounded-2xl border border-cyan-500 px-4 py-3 text-sm font-semibold text-cyan-300">Copy Referral Link</button>
               </div>
               <label class="mt-4 mb-2 block text-sm text-slate-300" for="admin-wallet">BTC Wallet Address</label>
@@ -149,6 +149,7 @@
           list.innerHTML = '<p class="text-sm text-slate-400">Unable to load clients.</p>';
           return;
         }
+
         const clients = Array.isArray(data) ? data : data.clients || [];
         list.innerHTML = `
           <table class="min-w-full text-left text-sm">
@@ -164,22 +165,29 @@
               </tr>
             </thead>
             <tbody>
-              ${clients.map((client) => `
+              ${clients.map((client) => {
+                const clientId = client._id || client.id || '';
+                const email = client.email || '';
+                const name = client.name || '';
+                const profits = Number(client.profits || 0);
+                const totalInvestment = Number(client.totalInvestment || 0);
+                const payoutDate = client.payoutDate ? client.payoutDate.split('T')[0] : '';
+                return `
                 <tr class="border-t border-slate-800">
-                  <td class="px-3 py-3">${client._id}</td>
-                  <td class="px-3 py-3">${client.email}</td>
-                  <td class="px-3 py-3">${client.name}</td>
-                  <td class="px-3 py-3"><input data-field="profits" data-id="${client._id}" value="${client.profits || 0}" class="w-24 rounded-lg border border-slate-700 bg-slate-950 px-2 py-2" /></td>
-                  <td class="px-3 py-3"><input data-field="totalInvestment" data-id="${client._id}" value="${client.totalInvestment || 0}" class="w-24 rounded-lg border border-slate-700 bg-slate-950 px-2 py-2" /></td>
-                  <td class="px-3 py-3"><input type="date" data-field="payoutDate" data-id="${client._id}" value="${client.payoutDate ? client.payoutDate.split('T')[0] : ''}" class="w-36 rounded-lg border border-slate-700 bg-slate-950 px-2 py-2" /></td>
+                  <td class="px-3 py-3">${clientId}</td>
+                  <td class="px-3 py-3">${email}</td>
+                  <td class="px-3 py-3">${name}</td>
+                  <td class="px-3 py-3"><input data-field="profits" data-id="${clientId}" value="${profits}" class="w-24 rounded-lg border border-slate-700 bg-slate-950 px-2 py-2" /></td>
+                  <td class="px-3 py-3"><input data-field="totalInvestment" data-id="${clientId}" value="${totalInvestment}" class="w-24 rounded-lg border border-slate-700 bg-slate-950 px-2 py-2" /></td>
+                  <td class="px-3 py-3"><input type="date" data-field="payoutDate" data-id="${clientId}" value="${payoutDate}" class="w-36 rounded-lg border border-slate-700 bg-slate-950 px-2 py-2" /></td>
                   <td class="px-3 py-3">
                     <div class="flex flex-wrap gap-2">
-                      <button data-save="${client._id}" class="rounded-lg bg-cyan-500 px-3 py-2 text-slate-950">Save</button>
-                      <button data-delete-client="${client._id}" class="rounded-lg bg-rose-500 px-3 py-2 text-slate-950">Delete</button>
+                      <button data-save="${clientId}" class="rounded-lg bg-cyan-500 px-3 py-2 text-slate-950">Save</button>
+                      <button data-delete-client="${clientId}" class="rounded-lg bg-rose-500 px-3 py-2 text-slate-950">Delete</button>
                     </div>
                   </td>
-                </tr>
-              `).join('')}
+                </tr>`;
+              }).join('')}
             </tbody>
           </table>
         `;

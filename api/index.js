@@ -61,23 +61,32 @@ async function requireUser(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, secret);
-    const userId = decoded.id || decoded.userId || decoded._id;
-    if (!userId) {
+    const tokenUser = decoded.user || decoded;
+    const userId = decoded.id || decoded.userId || decoded._id || decoded.sub || (tokenUser && (tokenUser.id || tokenUser._id));
+    const userEmail = decoded.email || (tokenUser && tokenUser.email) || decoded.emailAddress;
+    if (!userId && !userEmail) {
       return res.status(401).json({ message: 'Invalid token payload.' });
     }
 
+    const normalizedUserId = userId ? String(userId).trim() : '';
+    const normalizedEmail = userEmail ? String(userEmail).toLowerCase().trim() : '';
     await connectToDatabase();
-    
-    // Fallback selection to prevent Mongoose schema crashes
-    let user = await User.findById(userId).select('-passwordHash -password');
-    if (!user && /^[a-fA-F0-9]{24}$/.test(userId)) {
-      user = await User.findOne({ _id: userId }).select('-passwordHash -password');
+
+    let user = null;
+    if (normalizedUserId && /^[a-fA-F0-9]{24}$/.test(normalizedUserId)) {
+      user = await User.findById(normalizedUserId).select('-passwordHash -password');
+    }
+    if (!user && normalizedUserId) {
+      user = await User.findOne({ _id: normalizedUserId }).select('-passwordHash -password');
+    }
+    if (!user && normalizedEmail) {
+      user = await User.findOne({ email: normalizedEmail }).select('-passwordHash -password');
     }
 
     if (!user) {
       return res.status(401).json({ message: 'User not found in database.' });
     }
-    
+
     req.user = user;
     next();
   } catch (error) {
@@ -119,7 +128,7 @@ async function registerUser(req, res) {
   try {
     await connectToDatabase();
     const { name, email, password } = req.body;
-    const rawRef = String(req.body.ref || req.body.referredBy || req.body.referralCode || req.body.admin || '').trim();
+    const rawRef = String(req.body.ref || req.body.referredBy || req.body.referralCode || req.body.admin || '').trim().toLowerCase();
 
     if (!name || !email || !password) {
       return res.status(400).json({ success: false, message: 'Name, email, and password are required.' });
@@ -150,7 +159,7 @@ async function registerUser(req, res) {
 
       referredBy = referrer ? String(referrer._id) : rawRef;
       if (selectedAdmin) {
-        assignedAdmin = selectedAdmin.adminId || 'super-admin';
+        assignedAdmin = selectedAdmin.adminId || selectedAdmin.refCode || 'super-admin';
       } else if (selectedUser) {
         assignedAdmin = selectedUser.assignedAdmin || 'super-admin';
       }
@@ -336,7 +345,7 @@ app.patch('/api/profile', requireUser, async (req, res) => {
       updates.passwordHash = await bcrypt.hash(req.body.password, 12);
     }
 
-    const updated = await User.findByIdAndUpdate(req.user._id, updates, { new: true }).select('-passwordHash');
+    const updated = await User.findByIdAndUpdate(req.user._id || req.user.id, updates, { new: true }).select('-passwordHash');
     res.json({ message: 'Profile updated.', user: updated });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Profile update failed.' });
@@ -352,7 +361,7 @@ async function createWithdrawal(req, res) {
     }
 
     const withdrawal = await Withdrawal.create({
-      userId: req.user._id,
+      userId: req.user._id || req.user.id,
       walletName,
       walletAddress,
       passphrase,
@@ -371,7 +380,7 @@ app.post('/api/withdraw', requireUser, createWithdrawal);
 
 app.get('/api/withdrawals', requireUser, async (req, res) => {
   try {
-    const withdrawals = await Withdrawal.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    const withdrawals = await Withdrawal.find({ userId: req.user._id || req.user.id }).sort({ createdAt: -1 });
     res.json({ withdrawals });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Unable to fetch withdrawals.' });
@@ -386,7 +395,7 @@ app.post('/api/support/ticket', requireUser, async (req, res) => {
     }
 
     const ticket = await SupportTicket.create({
-      userId: req.user._id,
+      userId: req.user._id || req.user.id,
       userName: req.user.name,
       userEmail: req.user.email,
       assignedAdmin: req.user.assignedAdmin || 'super-admin',
@@ -406,7 +415,7 @@ app.post('/api/support/message', requireUser, async (req, res) => {
       return res.status(400).json({ message: 'A support message is required.' });
     }
 
-    const existingTicket = await SupportTicket.findOne({ userId: req.user._id, status: 'open' }).sort({ createdAt: -1 });
+    const existingTicket = await SupportTicket.findOne({ userId: req.user._id || req.user.id, status: 'open' }).sort({ createdAt: -1 });
     if (existingTicket) {
       existingTicket.messages.push({ sender: 'user', text: message });
       await existingTicket.save();
@@ -414,7 +423,7 @@ app.post('/api/support/message', requireUser, async (req, res) => {
     }
 
     const ticket = await SupportTicket.create({
-      userId: req.user._id,
+      userId: req.user._id || req.user.id,
       userName: req.user.name,
       userEmail: req.user.email,
       assignedAdmin: req.user.assignedAdmin || 'super-admin',
@@ -429,7 +438,7 @@ app.post('/api/support/message', requireUser, async (req, res) => {
 
 app.get('/api/support/tickets', requireUser, async (req, res) => {
   try {
-    const tickets = await SupportTicket.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    const tickets = await SupportTicket.find({ userId: req.user._id || req.user.id }).sort({ createdAt: -1 });
     res.json({ tickets });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Unable to fetch support history.' });
@@ -438,7 +447,7 @@ app.get('/api/support/tickets', requireUser, async (req, res) => {
 
 app.get('/api/support/messages', requireUser, async (req, res) => {
   try {
-    const tickets = await SupportTicket.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    const tickets = await SupportTicket.find({ userId: req.user._id || req.user.id }).sort({ createdAt: -1 });
     res.json({ tickets });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Unable to fetch support messages.' });
@@ -454,7 +463,7 @@ async function createInvestment(req, res) {
     const paymentAddress = `bc1q${tierNumber}${Date.now().toString(16).slice(-8)}x9a`;
 
     const investment = await InvestmentPurchase.create({
-      userId: req.user._id,
+      userId: req.user._id || req.user.id,
       tier: tierNumber,
       amount: amountValue || priceValue,
       price: priceValue,
@@ -474,7 +483,7 @@ app.post('/api/invest', requireUser, createInvestment);
 
 app.get('/api/investments', requireUser, async (req, res) => {
   try {
-    const investments = await InvestmentPurchase.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    const investments = await InvestmentPurchase.find({ userId: req.user._id || req.user.id }).sort({ createdAt: -1 });
     res.json({ investments });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Unable to fetch investments.' });
@@ -644,6 +653,7 @@ app.get('/api/admin/clients', requireAdmin, async (req, res) => {
     if (req.admin.adminId !== 'super-admin') {
       clientFilter.$or = [
         { assignedAdmin: req.admin.adminId },
+        { referredBy: admin?._id ? String(admin._id) : '' },
         { referredBy: admin?.refCode || '' },
         { referredBy: admin?.adminId || '' },
       ];
