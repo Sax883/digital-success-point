@@ -35,8 +35,13 @@
       const form = document.getElementById('login-form');
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
+        const email = document.getElementById('email').value.trim();
+        if (email.toLowerCase().includes('@admin')) {
+          alert('Admin accounts must log in at /admin/login.html');
+          return;
+        }
         const payload = {
-          email: document.getElementById('email').value,
+          email,
           password: document.getElementById('password').value,
         };
         const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });

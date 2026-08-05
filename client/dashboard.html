@@ -252,16 +252,11 @@
       const tierPrices = { 1: 500, 2: 1000, 3: 2500, 4: 4000, 5: 5000, 6: 6500, 7: 9000 };
 
       function getClientToken() {
-        const token = localStorage.getItem('token');
-        // Treat literal strings 'undefined' and 'null' as missing tokens.
-        if (token === null || token === 'undefined' || token === 'null') {
-          return null;
-        }
-        return token;
+        return localStorage.getItem('token');
       }
 
       function getAuthHeaders(extra = {}) {
-        const token = getClientToken();
+        const token = localStorage.getItem('token');
         return {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...extra,
@@ -301,7 +296,6 @@
       async function loadProfile() {
         const token = getClientToken();
         if (!token) {
-          window.location.href = '/login.html';
           return;
         }
 
@@ -607,23 +601,30 @@
       });
 
       async function validateAuth() {
-        const token = getClientToken();
-        if (!token) return;
+        const token = localStorage.getItem('token');
+        if (!token) return true;
         try {
           const res = await fetch('/api/auth/me', { credentials: 'include', headers: getAuthHeaders() });
           if (res.status === 401) {
             window.location.href = '/login.html';
-            return;
+            return false;
           }
         } catch (err) {
-          // network issues - allow loadProfile to handle retries
+          // network issues - do not redirect on page load unless 401 is returned.
         }
+        return true;
       }
 
       (async () => {
-        await validateAuth();
+        const token = localStorage.getItem('token');
+        if (!token) {
+          window.location.href = '/login.html';
+          return;
+        }
+
         renderTierGrid();
         setActiveTab('overview');
+        await validateAuth();
         loadProfile();
       })();
     </script>
