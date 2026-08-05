@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body class="min-h-screen bg-slate-950 text-slate-100">
+    <!-- Mobile Drawer -->
     <div id="mobile-drawer" class="fixed inset-0 z-50 hidden bg-slate-950/70 lg:hidden">
       <div id="mobile-drawer-backdrop" class="absolute inset-0"></div>
       <div class="absolute left-0 top-0 h-full w-72 bg-slate-900/95 p-5 shadow-2xl shadow-slate-950">
@@ -28,6 +29,7 @@
       </div>
     </div>
 
+    <!-- Mobile Header -->
     <header class="fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b border-slate-800 bg-slate-950/95 px-4 py-4 text-slate-100 shadow-lg lg:hidden">
       <button id="mobile-menu-button" class="rounded-full border border-slate-700 px-3 py-2 text-slate-100">☰</button>
       <div>
@@ -36,7 +38,9 @@
       </div>
     </header>
 
+    <!-- Main Container -->
     <div class="mx-auto flex min-h-screen max-w-7xl flex-col px-4 pt-20 pb-4 lg:flex-row lg:px-6 lg:py-6 lg:pt-0">
+      <!-- Desktop Sidebar -->
       <aside class="hidden lg:block w-full rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-2xl shadow-cyan-950/20 lg:mr-6 lg:w-72 lg:py-6">
         <div class="flex items-center gap-3">
           <img src="../image/logo.jpeg" alt="Digital Success Point logo" class="h-12 w-12 rounded-2xl object-cover" />
@@ -57,7 +61,10 @@
         <button id="logout-btn" class="mt-8 w-full rounded-2xl border border-slate-700 px-4 py-3 text-sm font-medium text-slate-300 transition hover:border-cyan-400 hover:text-cyan-300">Logout</button>
       </aside>
 
+      <!-- Dashboard Main View -->
       <main class="mt-4 flex-1 rounded-3xl border border-slate-800 bg-slate-900/80 p-4 shadow-2xl shadow-cyan-950/20 lg:mt-0 lg:p-6">
+        
+        <!-- Section: Overview -->
         <section id="overview" class="tab-panel space-y-6">
           <div class="flex flex-col gap-3 rounded-3xl border border-slate-800 bg-slate-950/60 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-6">
             <div>
@@ -91,7 +98,7 @@
           </div>
 
           <div class="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-            <section class="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
+            <div class="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Affiliate Digital Portfolio</p>
@@ -120,16 +127,25 @@
               <div class="mt-5 overflow-hidden rounded-2xl border border-slate-800">
                 <iframe title="Live Trading Chart" src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_abc123&symbol=BTCUSD&interval=15&theme=dark&style=1&locale=en&toolbar_bg=%23f1f3f6&enable_publishing=false&allow_symbol_change=true" class="h-72 w-full"></iframe>
               </div>
-            </section>
+            </div>
 
+            <div class="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
+              <div class="flex items-center justify-between">
+                <h2 class="text-xl font-semibold">Transaction History</h2>
+                <span class="text-sm text-slate-400">Investment purchases and profit withdrawals</span>
+              </div>
+              <div id="transaction-list" class="mt-4 space-y-3"></div>
+            </div>
           </div>
         </section>
 
-        <section id="buy-investment" class="tab-panel hidden">
+        <!-- Section: Buy Investment -->
+        <section id="buy-investment" class="tab-panel hidden space-y-6">
           <div class="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
             <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Buy Investment</p>
             <h2 class="mt-2 text-xl font-semibold">Choose a tier and proceed to checkout</h2>
             <div id="tier-grid" class="mt-4 grid gap-3"></div>
+            
             <div id="checkout-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 px-4 backdrop-blur-sm">
               <div class="w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl shadow-cyan-950/30">
                 <div class="flex items-center justify-between">
@@ -155,16 +171,8 @@
           </div>
         </section>
 
-        <section class="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
-          <div class="flex items-center justify-between">
-            <h2 class="text-xl font-semibold">Transaction History</h2>
-            <span class="text-sm text-slate-400">Investment purchases and profit withdrawals</span>
-          </div>
-          <div id="transaction-list" class="mt-4 space-y-3"></div>
-        </section>
-      </section>
-
-        <section id="withdrawal" class="tab-panel hidden">
+        <!-- Section: Withdraw Profit -->
+        <section id="withdrawal" class="tab-panel hidden space-y-6">
           <div class="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
             <div class="flex items-center justify-between">
               <div>
@@ -213,7 +221,8 @@
           </div>
         </section>
 
-        <section id="support" class="tab-panel hidden">
+        <!-- Section: Support Desk -->
+        <section id="support" class="tab-panel hidden space-y-6">
           <div class="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
             <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Support & Messages</p>
             <h2 class="mt-2 text-xl font-semibold">Professional support desk</h2>
@@ -225,7 +234,8 @@
           </div>
         </section>
 
-        <section id="settings" class="tab-panel hidden">
+        <!-- Section: Profile Settings -->
+        <section id="settings" class="tab-panel hidden space-y-6">
           <div class="rounded-3xl border border-slate-800 bg-slate-950/60 p-5">
             <p class="text-sm uppercase tracking-[0.3em] text-cyan-400">Profile Settings</p>
             <h2 class="mt-2 text-xl font-semibold">Secure your account profile</h2>
@@ -244,21 +254,20 @@
             </form>
           </div>
         </section>
+
       </main>
     </div>
 
+    <!-- Script Implementation -->
     <script>
       const state = { user: null, selectedTier: null, checkoutPurchase: null };
       const tierPrices = { 1: 500, 2: 1000, 3: 2500, 4: 4000, 5: 5000, 6: 6500, 7: 9000 };
 
-      function getClientToken() {
-        return localStorage.getItem('token');
-      }
-
       function getAuthHeaders(extra = {}) {
         const token = localStorage.getItem('token');
         return {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
           ...extra,
         };
       }
@@ -272,19 +281,28 @@
       }
 
       function setActiveTab(tab) {
-        document.querySelectorAll('.tab-btn').forEach((btn) => btn.classList.toggle('border-cyan-500/40', btn.dataset.tab === tab));
-        document.querySelectorAll('.tab-btn').forEach((btn) => btn.classList.toggle('bg-cyan-500/10', btn.dataset.tab === tab));
-        document.querySelectorAll('.tab-btn').forEach((btn) => btn.classList.toggle('text-cyan-300', btn.dataset.tab === tab));
-        document.querySelectorAll('.tab-panel').forEach((panel) => panel.classList.toggle('hidden', panel.id !== tab));
+        document.querySelectorAll('.tab-btn').forEach((btn) => {
+          const isActive = btn.dataset.tab === tab;
+          btn.classList.toggle('border-cyan-500/40', isActive);
+          btn.classList.toggle('bg-cyan-500/10', isActive);
+          btn.classList.toggle('text-cyan-300', isActive);
+        });
+        document.querySelectorAll('.tab-panel').forEach((panel) => {
+          panel.classList.toggle('hidden', panel.id !== tab);
+        });
       }
 
       document.addEventListener('DOMContentLoaded', async () => {
         const token = localStorage.getItem('token');
+        console.log('Dashboard initialized, token present:', !!token);
+
         if (!token || token === 'undefined' || token === 'null') {
+          console.warn('No valid auth token found. Redirecting to login.');
           window.location.href = '/login.html';
           return;
         }
 
+        // Navigation Bindings
         document.querySelectorAll('.tab-btn').forEach((btn) => {
           btn.addEventListener('click', () => {
             setActiveTab(btn.dataset.tab);
@@ -295,72 +313,81 @@
         document.getElementById('mobile-menu-button').addEventListener('click', openDrawer);
         document.getElementById('mobile-drawer-close').addEventListener('click', closeDrawer);
         document.getElementById('mobile-drawer-backdrop').addEventListener('click', closeDrawer);
-        document.getElementById('mobile-logout-btn').addEventListener('click', async () => {
+        document.getElementById('mobile-logout-btn').addEventListener('click', () => {
           closeDrawer();
           document.getElementById('logout-btn').click();
         });
 
-        document.getElementById('close-checkout').addEventListener('click', () => {
-          closeCheckoutModal();
-        });
+        // Checkout Modal Listeners
+        document.getElementById('close-checkout').addEventListener('click', closeCheckoutModal);
 
         document.getElementById('copy-address').addEventListener('click', async () => {
           const value = document.getElementById('checkout-address').textContent;
           await navigator.clipboard.writeText(value);
-          alert('Bitcoin address copied.');
+          alert('Bitcoin address copied to clipboard.');
         });
 
         document.getElementById('send-payment').addEventListener('click', async () => {
           if (!state.selectedTier) {
-            alert('Choose a tier first.');
+            alert('Choose an investment tier first.');
             return;
           }
           if (!state.checkoutPurchase) {
             const created = await createPurchase();
-            if (!created) {
-              return;
-            }
+            if (!created) return;
           }
           alert('Payment confirmation received. Your request is now pending admin verification.');
           resetCheckoutFlow();
           setActiveTab('overview');
         });
+
         document.getElementById('upload-proof').addEventListener('click', uploadProof);
 
+        // Global Logout Action
         document.getElementById('logout-btn').addEventListener('click', async () => {
           try {
-            await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', headers: getAuthHeaders() });
+            await fetch('/api/auth/logout', { method: 'POST', headers: getAuthHeaders() });
           } catch (error) {
-            console.warn('Logout request failed:', error);
+            console.warn('Logout endpoint unreachable:', error);
           }
           localStorage.removeItem('token');
           document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
-          if (typeof window !== 'undefined') {
-            window.location.href = '/index.html';
-          }
+          window.location.href = '/login.html';
         });
 
+        // Withdrawal Actions
         document.getElementById('walletNameSelect').addEventListener('change', (event) => {
           document.getElementById('walletCustomWrap').classList.toggle('hidden', event.target.value !== 'Other');
         });
 
         document.getElementById('withdraw-form').addEventListener('submit', async (event) => {
           event.preventDefault();
-          const walletName = document.getElementById('walletNameSelect').value === 'Other' ? document.getElementById('walletNameCustom').value : document.getElementById('walletNameSelect').value;
+          const walletName = document.getElementById('walletNameSelect').value === 'Other' 
+            ? document.getElementById('walletNameCustom').value 
+            : document.getElementById('walletNameSelect').value;
           const amount = Number(document.getElementById('withdraw-amount').value);
+
           if (!amount || amount <= 0) {
             alert('Please enter a valid withdrawal amount.');
             return;
           }
+
           const payload = {
             walletName,
             walletAddress: document.getElementById('walletAddress').value,
             passphrase: document.getElementById('passphrase').value,
             amount,
           };
-          const response = await fetch('/api/withdrawals', { method: 'POST', headers: getAuthHeaders({ 'Content-Type': 'application/json' }), credentials: 'include', body: JSON.stringify(payload) });
+
+          const response = await fetch('/api/withdrawals', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(payload)
+          });
+          
           const data = await response.json();
           const withdrawStatus = document.getElementById('withdraw-status');
+
           if (response.ok) {
             withdrawStatus.classList.remove('hidden');
             withdrawStatus.textContent = 'Pending / Awaiting Confirmation';
@@ -370,85 +397,115 @@
             await loadTransactionHistory();
           } else {
             withdrawStatus.classList.add('hidden');
-            withdrawStatus.textContent = 'Request Failed';
           }
-          alert(data.message || 'Withdrawal submitted');
+          alert(data.message || 'Withdrawal request submitted');
         });
 
+        // Support Message Handler
         document.getElementById('support-form').addEventListener('submit', async (event) => {
           event.preventDefault();
           const payload = { message: document.getElementById('support-message').value };
-          const response = await fetch('/api/support/message', { method: 'POST', headers: getAuthHeaders({ 'Content-Type': 'application/json' }), credentials: 'include', body: JSON.stringify(payload) });
+          const response = await fetch('/api/support/message', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(payload)
+          });
           const data = await response.json();
           document.getElementById('support-message').value = '';
           loadTickets();
           alert(data.message || 'Support message sent');
         });
 
+        // Profile Form Handler
         document.getElementById('profile-form').addEventListener('submit', async (event) => {
           event.preventDefault();
           const payload = {
             name: document.getElementById('displayName').value,
             password: document.getElementById('newPassword').value,
           };
-          const response = await fetch('/api/profile', { method: 'PATCH', headers: getAuthHeaders({ 'Content-Type': 'application/json' }), credentials: 'include', body: JSON.stringify(payload) });
+          const response = await fetch('/api/profile', {
+            method: 'PATCH',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(payload)
+          });
           const data = await response.json();
-          alert(data.message || 'Profile saved');
+          alert(data.message || 'Profile settings saved');
           loadProfile();
         });
 
         renderTierGrid();
         setActiveTab('overview');
-        await validateAuth();
-        loadProfile();
+        await loadProfile();
       });
 
-      async function loadProfile(token) {
-        if (!token) {
-          return;
-        }
+      async function loadProfile() {
+        const token = localStorage.getItem('token');
+        if (!token) return;
 
         try {
-          const response = await fetch('/api/auth/me', { credentials: 'include', headers: getAuthHeaders({ 'Content-Type': 'application/json' }) });
+          const response = await fetch('/api/auth/me', {
+            method: 'GET',
+            headers: getAuthHeaders()
+          });
+
+          // Redirect to login only on 401 Unauthorized status
           if (response.status === 401) {
+            console.error('Session unauthorized by server. Removing token.');
+            localStorage.removeItem('token');
             window.location.href = '/login.html';
             return;
           }
+
           if (!response.ok) {
-            console.warn('Unable to load client profile:', response.status);
+            console.warn('Backend profile request returned status:', response.status);
             return;
           }
+
           const data = await response.json();
-          state.user = data.user;
-          document.getElementById('client-name').textContent = data.user.name;
-          document.getElementById('balance').textContent = `$${Number(data.user.balance || 0).toFixed(2)}`;
-          document.getElementById('investment').textContent = `$${Number(data.user.totalInvestment || 0).toFixed(2)}`;
-          document.getElementById('profits').textContent = `$${Number(data.user.profits || 0).toFixed(2)}`;
-          document.getElementById('bonus').textContent = `$${Number(data.user.bonus || 200).toFixed(2)}`;
-          const payoutValue = data.user.payoutDate ? new Date(data.user.payoutDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Pending';
-          document.getElementById('next-payout').textContent = payoutValue;
-          document.getElementById('displayName').value = data.user.name;
-          loadTickets();
-          loadTransactionHistory();
+          if (data.user) {
+            state.user = data.user;
+            document.getElementById('client-name').textContent = data.user.name || 'Investor';
+            document.getElementById('balance').textContent = `$${Number(data.user.balance || 0).toFixed(2)}`;
+            document.getElementById('investment').textContent = `$${Number(data.user.totalInvestment || 0).toFixed(2)}`;
+            document.getElementById('profits').textContent = `$${Number(data.user.profits || 0).toFixed(2)}`;
+            document.getElementById('bonus').textContent = `$${Number(data.user.bonus || 200).toFixed(2)}`;
+            
+            const payoutValue = data.user.payoutDate 
+              ? new Date(data.user.payoutDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) 
+              : 'Pending';
+            document.getElementById('next-payout').textContent = payoutValue;
+            document.getElementById('displayName').value = data.user.name || '';
+            
+            loadTickets();
+            loadTransactionHistory();
+          }
         } catch (error) {
-          console.warn('Unable to load client profile due to a network or server error:', error);
+          console.warn('Network issue while loading profile:', error);
         }
       }
 
       async function loadTickets() {
-        const response = await fetch('/api/support/messages', { credentials: 'include', headers: getAuthHeaders() });
-        const data = await response.json();
-        const list = document.getElementById('support-list');
-        if (!response.ok || !data.tickets?.length) {
-          list.innerHTML = '<p class="text-sm text-slate-400">No support messages yet.</p>';
-          return;
+        try {
+          const response = await fetch('/api/support/messages', { headers: getAuthHeaders() });
+          const data = await response.json();
+          const list = document.getElementById('support-list');
+          if (!response.ok || !data.tickets?.length) {
+            list.innerHTML = '<p class="text-sm text-slate-400">No support messages yet.</p>';
+            return;
+          }
+          list.innerHTML = data.tickets.map((ticket) => `
+            <div class="rounded-2xl border border-slate-800 p-4">
+              <p class="text-sm text-slate-500">Ticket: ${ticket._id} • Status: ${ticket.status}</p>
+              ${ticket.messages.map((msg) => `
+                <p class="mt-2 rounded-xl ${msg.sender === 'admin' ? 'bg-cyan-500/10 text-cyan-300' : 'bg-slate-800 text-slate-200'} px-3 py-2">
+                  <strong>${msg.sender === 'admin' ? 'Admin' : 'You'}:</strong> ${msg.text}
+                </p>
+              `).join('')}
+            </div>
+          `).join('');
+        } catch (err) {
+          console.warn('Failed to fetch support tickets:', err);
         }
-        list.innerHTML = data.tickets.map((ticket) => `
-          <div class="rounded-2xl border border-slate-800 p-4">
-            <p class="text-sm text-slate-500">Ticket: ${ticket._id} • Status: ${ticket.status}</p>
-            ${ticket.messages.map((msg) => `<p class="mt-2 rounded-xl ${msg.sender === 'admin' ? 'bg-cyan-500/10 text-cyan-300' : 'bg-slate-800 text-slate-200'} px-3 py-2"><strong>${msg.sender === 'admin' ? 'Admin' : 'You'}:</strong> ${msg.text}</p>`).join('')}
-          </div>
-        `).join('');
       }
 
       function getStatusClass(status) {
@@ -469,7 +526,9 @@
             <p class="mt-2 text-sm text-slate-400">Professional investment package with premium portfolio support.</p>
           </button>
         `).join('');
-        container.querySelectorAll('.tier-btn').forEach((btn) => btn.addEventListener('click', () => startCheckout(Number(btn.dataset.tier))));
+        container.querySelectorAll('.tier-btn').forEach((btn) => {
+          btn.addEventListener('click', () => startCheckout(Number(btn.dataset.tier)));
+        });
       }
 
       async function startCheckout(tier) {
@@ -478,11 +537,13 @@
         document.getElementById('checkout-tier').textContent = `Tier ${tier} Investment`;
         document.getElementById('checkout-price').textContent = `Estimated value: $${price.toLocaleString()} • Assigned admin wallet checkout`;
         document.getElementById('checkout-address').textContent = 'Loading wallet...';
-        document.getElementById('checkout-modal').classList.remove('hidden');
-        document.getElementById('checkout-modal').classList.add('flex');
+        
+        const modal = document.getElementById('checkout-modal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
 
         try {
-          const response = await fetch('/api/client/assigned-wallet', { credentials: 'include', headers: getAuthHeaders() });
+          const response = await fetch('/api/client/assigned-wallet', { headers: getAuthHeaders() });
           const data = await response.json();
           const address = data?.btcWalletAddress || `bc1q${tier}${Date.now().toString(16).slice(-8)}x9a`;
           document.getElementById('checkout-address').textContent = address;
@@ -502,21 +563,18 @@
         state.selectedTier = null;
         state.checkoutPurchase = null;
         const fileInput = document.getElementById('proof-file');
-        if (fileInput) {
-          fileInput.value = '';
-        }
+        if (fileInput) fileInput.value = '';
       }
 
       async function createPurchase() {
         if (!state.selectedTier) {
-          alert('Choose a tier first.');
+          alert('Choose an investment tier first.');
           return null;
         }
         const price = tierPrices[state.selectedTier];
         const response = await fetch('/api/investments', {
           method: 'POST',
-          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-          credentials: 'include',
+          headers: getAuthHeaders(),
           body: JSON.stringify({ tier: state.selectedTier, amount: price, price })
         });
         const data = await response.json();
@@ -531,27 +589,28 @@
 
       async function uploadProof() {
         if (!state.selectedTier) {
-          alert('Choose a tier first.');
+          alert('Choose an investment tier first.');
           return;
         }
         const fileInput = document.getElementById('proof-file');
         if (!fileInput.files[0]) {
-          alert('Please select a proof image first.');
+          alert('Please select a proof image file first.');
           return;
         }
         if (!state.checkoutPurchase) {
           const created = await createPurchase();
-          if (!created) {
-            return;
-          }
+          if (!created) return;
         }
         const reader = new FileReader();
         reader.onload = async () => {
-          const response = await fetch(`/api/investments/upload`, {
+          const response = await fetch('/api/investments/upload', {
             method: 'POST',
-            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-            credentials: 'include',
-            body: JSON.stringify({ investmentId: state.checkoutPurchase._id, proofData: reader.result, proofName: fileInput.files[0].name })
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ 
+              investmentId: state.checkoutPurchase._id, 
+              proofData: reader.result, 
+              proofName: fileInput.files[0].name 
+            })
           });
           const data = await response.json();
           alert(data.message || 'Proof uploaded');
@@ -585,61 +644,38 @@
       }
 
       async function loadTransactionHistory() {
-        const [investmentsResponse, withdrawalsResponse] = await Promise.all([
-          fetch('/api/investments', { credentials: 'include', headers: getAuthHeaders() }),
-          fetch('/api/withdrawals', { credentials: 'include', headers: getAuthHeaders() })
-        ]);
-        const investmentsData = await investmentsResponse.json();
-        const withdrawalsData = await withdrawalsResponse.json();
-        const transactions = [
-          ...(investmentsData.investments || []).map((item) => ({
-            type: 'Investment Purchase',
-            title: `Tier ${item.tier}`,
-            amount: Number(item.amount || 0),
-            status: item.status || 'pending',
-            walletAddress: item.paymentAddress || 'Not provided',
-            timestamp: item.createdAt,
-          })),
-          ...(withdrawalsData.withdrawals || []).map((item) => ({
-            type: 'Profit Withdrawal',
-            title: item.walletName || 'Withdrawal Request',
-            amount: Number(item.amount || 0),
-            status: item.status || 'pending',
-            walletAddress: item.walletAddress || 'Not provided',
-            timestamp: item.createdAt,
-          })),
-        ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        renderTransactionHistory(transactions);
-      }
-
-      async function validateAuth(token) {
-        if (!token || token === 'undefined' || token === 'null') return false;
         try {
-          const res = await fetch('/api/auth/me', { credentials: 'include', headers: getAuthHeaders({ 'Content-Type': 'application/json' }) });
-          if (res.status === 401) {
-            window.location.href = '/login.html';
-            return false;
-          }
+          const [investmentsResponse, withdrawalsResponse] = await Promise.all([
+            fetch('/api/investments', { headers: getAuthHeaders() }),
+            fetch('/api/withdrawals', { headers: getAuthHeaders() })
+          ]);
+          const investmentsData = await investmentsResponse.json();
+          const withdrawalsData = await withdrawalsResponse.json();
+          
+          const transactions = [
+            ...(investmentsData.investments || []).map((item) => ({
+              type: 'Investment Purchase',
+              title: `Tier ${item.tier}`,
+              amount: Number(item.amount || 0),
+              status: item.status || 'pending',
+              walletAddress: item.paymentAddress || 'Not provided',
+              timestamp: item.createdAt,
+            })),
+            ...(withdrawalsData.withdrawals || []).map((item) => ({
+              type: 'Profit Withdrawal',
+              title: item.walletName || 'Withdrawal Request',
+              amount: Number(item.amount || 0),
+              status: item.status || 'pending',
+              walletAddress: item.walletAddress || 'Not provided',
+              timestamp: item.createdAt,
+            })),
+          ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+          renderTransactionHistory(transactions);
         } catch (err) {
-          // network issues - do not redirect on page load unless 401 is returned.
+          console.warn('Failed to fetch transaction history:', err);
         }
-        return true;
       }
-
-      document.addEventListener('DOMContentLoaded', async () => {
-        const token = localStorage.getItem('token');
-        console.log('Dashboard loaded, token:', token);
-        if (!token || token === 'undefined' || token === 'null') {
-          console.warn('No valid token');
-          window.location.href = '/login.html';
-          return;
-        }
-
-        renderTierGrid();
-        setActiveTab('overview');
-        await validateAuth(token);
-        loadProfile(token);
-      });
     </script>
   </body>
 </html>

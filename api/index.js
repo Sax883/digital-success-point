@@ -22,12 +22,13 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.static(path.join(__dirname, '..')));
+
 function signToken(payload) {
   return jwt.sign(payload, secret, { expiresIn: '7d' });
 }
 
 function getBearerTokenFromHeader(req) {
-  const authorization = req.get('authorization');
+  const authorization = req.get('authorization') || req.headers.authorization || req.headers.Authorization;
   if (!authorization || typeof authorization !== 'string') return null;
   const [scheme, token] = authorization.trim().split(/\s+/);
   return /^Bearer$/i.test(scheme) ? token : authorization.trim();
@@ -74,7 +75,7 @@ async function requireUser(req, res, next) {
     next();
   } catch (error) {
     console.error('User token verification failed:', error.message);
-    return res.status(401).json({ message: 'Invalid token.' });
+    return res.status(401).json({ message: 'Invalid or expired token.' });
   }
 }
 
@@ -111,7 +112,6 @@ async function registerUser(req, res) {
   try {
     await connectToDatabase();
     const { name, email, password } = req.body;
-    // Accept referral fields: ref, referredBy, referralCode, admin
     const rawRef = String(req.body.ref || req.body.referredBy || req.body.referralCode || req.body.admin || '').trim();
 
     if (!name || !email || !password) {
@@ -128,11 +128,21 @@ async function registerUser(req, res) {
 
     if (rawRef) {
       const normalizedRef = rawRef.toLowerCase();
-      const selectedAdmin = await Admin.findOne({ $or: [{ adminId: normalizedRef }, { refCode: normalizedRef }, { _id: normalizedRef }] });
-      const selectedUser = await User.findOne({ referralCode: normalizedRef });
+      
+      // Look up admin or user referrers safely without throwing ObjectId cast errors
+      const adminQuery = [{ adminId: normalizedRef }, { refCode: normalizedRef }];
+      const userQuery = [{ referralCode: normalizedRef }];
+      
+      if (/^[a-fA-F0-9]{24}$/.test(rawRef)) {
+        adminQuery.push({ _id: rawRef });
+        userQuery.push({ _id: rawRef });
+      }
+
+      const selectedAdmin = await Admin.findOne({ $or: adminQuery });
+      const selectedUser = await User.findOne({ $or: userQuery });
       const referrer = selectedAdmin || selectedUser;
 
-      referredBy = referrer ? String(referrer._id) : null;
+      referredBy = referrer ? String(referrer._id) : rawRef;
       if (selectedAdmin) {
         assignedAdmin = selectedAdmin.adminId || 'super-admin';
       } else if (selectedUser) {

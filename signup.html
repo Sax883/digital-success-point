@@ -14,6 +14,7 @@
           <h1 class="text-2xl font-semibold">Create your account</h1>
           <p class="mt-2 text-sm text-slate-400">Every new account receives a $200 signup bonus.</p>
         </div>
+        
         <form id="signup-form" class="space-y-4">
           <div>
             <label class="mb-2 block text-sm text-slate-300" for="name">Full Name</label>
@@ -27,43 +28,73 @@
             <label class="mb-2 block text-sm text-slate-300" for="password">Password</label>
             <input id="password" name="password" type="password" required class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none ring-0 focus:border-cyan-500" />
           </div>
-          <button class="w-full rounded-2xl bg-cyan-500 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-400">Register Now</button>
+          <button id="submit-btn" type="submit" class="w-full rounded-2xl bg-cyan-500 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:opacity-50">Register Now</button>
         </form>
+
         <div class="mt-6 text-center text-sm text-slate-400">
-          Already have an account? <a href="/login.html" class="text-cyan-300 hover:text-cyan-200">Login</a>
+          Already have an account? <a href="./login.html" class="text-cyan-300 hover:text-cyan-200">Login</a>
         </div>
       </div>
     </div>
+
     <script>
+      // Automatically store referral code in localStorage as soon as page loads with ?ref=
+      document.addEventListener('DOMContentLoaded', () => {
+        const params = new URLSearchParams(window.location.search);
+        const refParam = params.get('ref') || params.get('admin');
+        if (refParam) {
+          localStorage.setItem('refCode', refParam.trim());
+        }
+      });
+
       const form = document.getElementById('signup-form');
+      const submitBtn = document.getElementById('submit-btn');
+
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
+
+        // Prevent multi-click submissions
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating Account...';
+
         const params = new URLSearchParams(window.location.search);
-        // Accept either ?ref=code or ?admin=code
-        const refParam = params.get('ref') || params.get('admin') || '';
-        const refCode = refParam || localStorage.getItem('refCode') || '';
-        if (refParam) {
-          localStorage.setItem('refCode', refCode);
-        }
+        const refParam = params.get('ref') || params.get('admin');
+        const refCode = (refParam || localStorage.getItem('refCode') || '').trim();
+
         const payload = {
-          name: document.getElementById('name').value,
-          email: document.getElementById('email').value,
+          name: document.getElementById('name').value.trim(),
+          email: document.getElementById('email').value.trim().toLowerCase(),
           password: document.getElementById('password').value,
           referredBy: refCode || null,
         };
+
         try {
-          const response = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-          console.log('Signup status:', response.status);
+          const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
           const data = await response.json();
-          console.log('Signup response:', data);
+          console.log('Signup Status:', response.status);
+          console.log('Signup Payload Response:', data);
+
           if (response.ok && data.token) {
             localStorage.setItem('token', data.token);
+            // Clear used referral code from local storage
+            localStorage.removeItem('refCode');
+            // Navigate using clean relative route
             window.location.href = './client/dashboard.html';
           } else {
             alert(data.message || data.error || 'Signup failed');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Register Now';
           }
         } catch (error) {
-          alert('Signup failed. Please try again.');
+          console.error('Signup Error:', error);
+          alert('Network or server error during registration. Please try again.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Register Now';
         }
       });
     </script>
