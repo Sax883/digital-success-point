@@ -58,7 +58,7 @@
           console.log('Signup response:', data);
           if (response.ok && data.token) {
             localStorage.setItem('token', data.token);
-            window.location.href = '/client/dashboard.html';
+            window.location.href = './client/dashboard.html';
           } else {
             alert(data.message || data.error || 'Signup failed');
           }
