@@ -35,11 +35,15 @@ function getBearerTokenFromHeader(req) {
 }
 
 function getToken(req) {
-  return req.cookies.token || getBearerTokenFromHeader(req);
+  const headerToken = getBearerTokenFromHeader(req);
+  if (headerToken) return headerToken;
+  return req.cookies.token || null;
 }
 
 function getAdminToken(req) {
-  return req.cookies.adminToken || req.headers['x-admin-token'] || getBearerTokenFromHeader(req);
+  const headerToken = req.headers['x-admin-token'] || getBearerTokenFromHeader(req);
+  if (headerToken) return headerToken;
+  return req.cookies.adminToken || null;
 }
 
 async function resolveAdminFromToken(token) {
@@ -218,13 +222,14 @@ app.post('/api/auth/register', registerUser);
 app.post('/api/auth/login', async (req, res) => {
   try {
     await connectToDatabase();
-    const { email, password } = req.body;
+    const email = String(req.body.email || '').toLowerCase().trim();
+    const password = String(req.body.password || '');
 
     if (!email || !password) {
       return res.status(400).json({ success: false, message: 'Email and password are required.' });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ success: false, message: 'Invalid email or password' });
     }
@@ -268,9 +273,20 @@ app.post('/api/auth/logout', (_req, res) => {
   res.json({ message: 'Logged out.' });
 });
 
+function findAssignedAdmin(ownerId) {
+  const normalized = String(ownerId || '').trim();
+  return Admin.findOne({
+    $or: [
+      { adminId: normalized },
+      { refCode: normalized },
+      { _id: normalized },
+    ],
+  });
+}
+
 app.get('/api/client/checkout-info', requireUser, async (req, res) => {
   try {
-    const admin = await Admin.findOne({ adminId: req.user.assignedAdmin }).select('adminId name btcWalletAddress');
+    const admin = await findAssignedAdmin(req.user.assignedAdmin);
     res.json({
       assignedAdmin: admin ? { adminId: admin.adminId, name: admin.name, btcWalletAddress: admin.btcWalletAddress } : null,
     });
@@ -281,7 +297,7 @@ app.get('/api/client/checkout-info', requireUser, async (req, res) => {
 
 app.get('/api/client/assigned-wallet', requireUser, async (req, res) => {
   try {
-    const admin = await Admin.findOne({ adminId: req.user.assignedAdmin }).select('btcWalletAddress');
+    const admin = await findAssignedAdmin(req.user.assignedAdmin);
     res.json({ btcWalletAddress: admin?.btcWalletAddress || '' });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Unable to load assigned wallet.' });
@@ -290,10 +306,10 @@ app.get('/api/client/assigned-wallet', requireUser, async (req, res) => {
 
 app.get('/api/settings', requireUser, async (req, res) => {
   try {
-    const admin = await Admin.findOne({ adminId: req.user.assignedAdmin }).select('adminId name btcWalletAddress');
+    const admin = await findAssignedAdmin(req.user.assignedAdmin);
     res.json({
       assignedAdmin: admin ? { adminId: admin.adminId, name: admin.name, btcWalletAddress: admin.btcWalletAddress } : null,
-      user: { id: req.user._id, name: req.user.name, email: req.user.email },
+      user: { id: req.user._id || req.user.id, name: req.user.name, email: req.user.email },
     });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Unable to load settings.' });

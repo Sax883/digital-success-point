@@ -264,10 +264,10 @@
       const tierPrices = { 1: 500, 2: 1000, 3: 2500, 4: 4000, 5: 5000, 6: 6500, 7: 9000 };
 
       function getAuthHeaders(extra = {}) {
-        const token = localStorage.getItem('token');
+        const token = String(localStorage.getItem('token') || '').trim();
         return {
           'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          ...(token && token !== 'undefined' && token !== 'null' ? { 'Authorization': `Bearer ${token}` } : {}),
           ...extra,
         };
       }
@@ -293,10 +293,10 @@
       }
 
       document.addEventListener('DOMContentLoaded', async () => {
-        const token = localStorage.getItem('token');
+        const token = String(localStorage.getItem('token') || '').trim();
         console.log('Dashboard initialized, token present:', !!token);
 
-        if (!token || token === 'undefined' || token === 'null') {
+        if (!token || token === 'undefined' || token === 'null' || token.length === 0) {
           console.warn('No valid auth token found. Redirecting to login.');
           window.location.href = '/login.html';
           return;
@@ -545,7 +545,7 @@
         try {
           const response = await fetch('/api/client/assigned-wallet', { headers: getAuthHeaders() });
           const data = await response.json();
-          const address = data?.btcWalletAddress || `bc1q${tier}${Date.now().toString(16).slice(-8)}x9a`;
+          const address = response.ok && data?.btcWalletAddress ? data.btcWalletAddress : `bc1q${tier}${Date.now().toString(16).slice(-8)}x9a`;
           document.getElementById('checkout-address').textContent = address;
         } catch (error) {
           document.getElementById('checkout-address').textContent = `bc1q${tier}${Date.now().toString(16).slice(-8)}x9a`;
