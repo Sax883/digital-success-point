@@ -40,8 +40,10 @@
           password: document.getElementById('password').value,
         };
         const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        console.log('Login status:', response.status);
         const data = await response.json();
-        if (response.ok && data.success && data.token) {
+        console.log('Login response:', data);
+        if (response.ok && data.token) {
           localStorage.setItem('token', data.token);
           window.location.href = '/client/dashboard.html';
         } else {

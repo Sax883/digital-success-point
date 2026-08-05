@@ -139,7 +139,7 @@ async function registerUser(req, res) {
     });
     await user.save();
 
-    const token = signToken({ id: user._id, role: user.role });
+    const token = jwt.sign({ id: user._id }, secret, { expiresIn: '7d' });
     res.cookie('token', token, {
       httpOnly: true,
       sameSite: 'lax',
@@ -191,7 +191,7 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid email or password' });
     }
 
-    const token = signToken({ id: user._id, role: user.role });
+    const token = jwt.sign({ id: user._id }, secret, { expiresIn: '7d' });
     res.cookie('token', token, {
       httpOnly: true,
       sameSite: 'lax',
