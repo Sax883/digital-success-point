@@ -261,7 +261,8 @@
       }
 
       function getAuthHeaders(extra = {}) {
-        const token = getClientToken();
+        let token = localStorage.getItem('token');
+        if (token === 'undefined' || token === 'null') token = null;
         return {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...extra,

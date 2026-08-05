@@ -52,7 +52,7 @@
           referredBy: refCode || undefined,
         };
         try {
-          const response = await fetch('/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          const response = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           const data = await response.json();
           if (response.ok && data.success && data.token) {
             localStorage.setItem('token', data.token);
