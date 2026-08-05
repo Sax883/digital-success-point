@@ -136,7 +136,6 @@ async function registerUser(req, res) {
     if (rawRef) {
       const normalizedRef = rawRef.toLowerCase();
       
-      // Look up admin or user referrers safely without throwing ObjectId cast errors
       const adminQuery = [{ adminId: normalizedRef }, { refCode: normalizedRef }];
       const userQuery = [{ referralCode: normalizedRef }];
       
@@ -180,19 +179,21 @@ async function registerUser(req, res) {
       secure: process.env.NODE_ENV === 'production',
     });
 
+    const userIdStr = user._id ? user._id.toString() : '';
     return res.status(201).json({
       success: true,
       token,
       user: {
-        id: user._id,
+        id: userIdStr,
+        _id: userIdStr,
         name: user.name,
         email: user.email,
         balance: user.balance,
         bonus: user.bonus,
         profits: user.profits,
         totalInvestment: user.totalInvestment,
-        payoutDate: user.payoutDate,
-        referredBy: user.referredBy,
+        payoutDate: user.payoutDate || '',
+        referredBy: user.referredBy || '',
       },
     });
   } catch (error) {
@@ -232,18 +233,20 @@ app.post('/api/auth/login', async (req, res) => {
       secure: process.env.NODE_ENV === 'production',
     });
 
+    const userIdStr = user._id ? user._id.toString() : '';
     return res.json({
       success: true,
       token,
       user: {
-        id: user._id,
+        id: userIdStr,
+        _id: userIdStr,
         name: user.name,
         email: user.email,
         balance: user.balance,
         bonus: user.bonus,
         profits: user.profits,
         totalInvestment: user.totalInvestment,
-        payoutDate: user.payoutDate,
+        payoutDate: user.payoutDate || '',
         role: user.role,
       },
     });
