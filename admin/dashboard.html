@@ -58,6 +58,12 @@
         return token;
       }
 
+      // Ensure all fetch requests include cookies so server-side cookie auth works
+      (function enableFetchWithCredentials() {
+        const _originalFetch = window.fetch.bind(window);
+        window.fetch = (url, options = {}) => _originalFetch(url, { credentials: 'include', ...options });
+      })();
+
       function getAdminAuthHeaders(extra = {}) {
         const token = getAdminToken();
         return {

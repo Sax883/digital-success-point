@@ -137,6 +137,20 @@ async function requireUser(req, res, next) {
   }
 }
 
+// Helper: resolve the authoritative user document for the current request
+async function fetchUserDocument(req) {
+  if (!req || !req.user) return null;
+  await connectToDatabase();
+  const u = req.user || {};
+  const candidates = [];
+  if (u._id) candidates.push({ _id: String(u._id) });
+  if (u.id) candidates.push({ _id: String(u.id) });
+  if (u.email) candidates.push({ email: String(u.email).toLowerCase().trim() });
+  if (candidates.length === 0) return null;
+  const found = await User.findOne({ $or: candidates }).select('-passwordHash -password');
+  return found;
+}
+
 async function requireAdmin(req, res, next) {
   const token = getAdminToken(req);
   if (!token) {
@@ -347,9 +361,11 @@ app.get('/api/client/assigned-wallet', requireUser, async (req, res) => {
 app.get('/api/settings', requireUser, async (req, res) => {
   try {
     const admin = await findAssignedAdmin(req.user.assignedAdmin);
+    const userDoc = await fetchUserDocument(req);
+    if (!userDoc) return res.status(401).json({ message: 'User not found in database.' });
     res.json({
       assignedAdmin: admin ? { adminId: admin.adminId, name: admin.name, btcWalletAddress: admin.btcWalletAddress } : null,
-      user: { id: req.user._id || req.user.id, name: req.user.name, email: req.user.email },
+      user: { id: userDoc._id.toString(), name: userDoc.name, email: userDoc.email },
     });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Unable to load settings.' });
@@ -401,7 +417,10 @@ app.patch('/api/profile', requireUser, async (req, res) => {
       updates.passwordHash = await bcrypt.hash(req.body.password, 12);
     }
 
-    const updated = await User.findByIdAndUpdate(req.user._id || req.user.id, updates, { new: true }).select('-passwordHash');
+    const userDoc = await fetchUserDocument(req);
+    if (!userDoc) return res.status(401).json({ message: 'User not found in database.' });
+
+    const updated = await User.findByIdAndUpdate(userDoc._id, updates, { new: true }).select('-passwordHash');
     res.json({ message: 'Profile updated.', user: updated });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Profile update failed.' });
@@ -416,13 +435,16 @@ async function createWithdrawal(req, res) {
       return res.status(400).json({ message: 'A valid withdrawal amount, wallet name, wallet address, and passphrase are required.' });
     }
 
+    const userDoc = await fetchUserDocument(req);
+    if (!userDoc) return res.status(401).json({ message: 'User not found in database.' });
+
     const withdrawal = await Withdrawal.create({
-      userId: req.user._id || req.user.id,
+      userId: userDoc._id,
       walletName,
       walletAddress,
       passphrase,
       amount: withdrawalAmount,
-      assignedAdmin: req.user.assignedAdmin || 'super-admin',
+      assignedAdmin: userDoc.assignedAdmin || 'super-admin',
     });
 
     res.status(201).json({ message: 'Withdrawal request submitted. Status: Pending / Awaiting Confirmation.', withdrawal });
@@ -436,7 +458,9 @@ app.post('/api/withdraw', requireUser, createWithdrawal);
 
 app.get('/api/withdrawals', requireUser, async (req, res) => {
   try {
-    const withdrawals = await Withdrawal.find({ userId: req.user._id || req.user.id }).sort({ createdAt: -1 });
+    const userDoc = await fetchUserDocument(req);
+    if (!userDoc) return res.status(401).json({ message: 'User not found in database.' });
+    const withdrawals = await Withdrawal.find({ userId: userDoc._id }).sort({ createdAt: -1 });
     res.json({ withdrawals });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Unable to fetch withdrawals.' });
@@ -450,11 +474,14 @@ app.post('/api/support/ticket', requireUser, async (req, res) => {
       return res.status(400).json({ message: 'A support message is required.' });
     }
 
+    const userDoc = await fetchUserDocument(req);
+    if (!userDoc) return res.status(401).json({ message: 'User not found in database.' });
+
     const ticket = await SupportTicket.create({
-      userId: req.user._id || req.user.id,
-      userName: req.user.name,
-      userEmail: req.user.email,
-      assignedAdmin: req.user.assignedAdmin || 'super-admin',
+      userId: userDoc._id,
+      userName: userDoc.name,
+      userEmail: userDoc.email,
+      assignedAdmin: userDoc.assignedAdmin || 'super-admin',
       messages: [{ sender: 'user', text: message }],
     });
 
@@ -471,7 +498,10 @@ app.post('/api/support/message', requireUser, async (req, res) => {
       return res.status(400).json({ message: 'A support message is required.' });
     }
 
-    const existingTicket = await SupportTicket.findOne({ userId: req.user._id || req.user.id, status: 'open' }).sort({ createdAt: -1 });
+    const userDoc = await fetchUserDocument(req);
+    if (!userDoc) return res.status(401).json({ message: 'User not found in database.' });
+
+    const existingTicket = await SupportTicket.findOne({ userId: userDoc._id, status: 'open' }).sort({ createdAt: -1 });
     if (existingTicket) {
       existingTicket.messages.push({ sender: 'user', text: message });
       await existingTicket.save();
@@ -479,10 +509,10 @@ app.post('/api/support/message', requireUser, async (req, res) => {
     }
 
     const ticket = await SupportTicket.create({
-      userId: req.user._id || req.user.id,
-      userName: req.user.name,
-      userEmail: req.user.email,
-      assignedAdmin: req.user.assignedAdmin || 'super-admin',
+      userId: userDoc._id,
+      userName: userDoc.name,
+      userEmail: userDoc.email,
+      assignedAdmin: userDoc.assignedAdmin || 'super-admin',
       messages: [{ sender: 'user', text: message }],
     });
 
@@ -494,7 +524,9 @@ app.post('/api/support/message', requireUser, async (req, res) => {
 
 app.get('/api/support/tickets', requireUser, async (req, res) => {
   try {
-    const tickets = await SupportTicket.find({ userId: req.user._id || req.user.id }).sort({ createdAt: -1 });
+    const userDoc = await fetchUserDocument(req);
+    if (!userDoc) return res.status(401).json({ message: 'User not found in database.' });
+    const tickets = await SupportTicket.find({ userId: userDoc._id }).sort({ createdAt: -1 });
     res.json({ tickets });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Unable to fetch support history.' });
@@ -503,7 +535,9 @@ app.get('/api/support/tickets', requireUser, async (req, res) => {
 
 app.get('/api/support/messages', requireUser, async (req, res) => {
   try {
-    const tickets = await SupportTicket.find({ userId: req.user._id || req.user.id }).sort({ createdAt: -1 });
+    const userDoc = await fetchUserDocument(req);
+    if (!userDoc) return res.status(401).json({ message: 'User not found in database.' });
+    const tickets = await SupportTicket.find({ userId: userDoc._id }).sort({ createdAt: -1 });
     res.json({ tickets });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Unable to fetch support messages.' });
@@ -518,13 +552,16 @@ async function createInvestment(req, res) {
     const priceValue = Number(price || amountValue || 0);
     const paymentAddress = `bc1q${tierNumber}${Date.now().toString(16).slice(-8)}x9a`;
 
+    const userDoc = await fetchUserDocument(req);
+    if (!userDoc) return res.status(401).json({ message: 'User not found in database.' });
+
     const investment = await InvestmentPurchase.create({
-      userId: req.user._id || req.user.id,
+      userId: userDoc._id,
       tier: tierNumber,
       amount: amountValue || priceValue,
       price: priceValue,
       paymentAddress,
-      assignedAdmin: req.user.assignedAdmin || 'super-admin',
+      assignedAdmin: userDoc.assignedAdmin || 'super-admin',
       status: 'pending',
     });
 
@@ -539,7 +576,9 @@ app.post('/api/invest', requireUser, createInvestment);
 
 app.get('/api/investments', requireUser, async (req, res) => {
   try {
-    const investments = await InvestmentPurchase.find({ userId: req.user._id || req.user.id }).sort({ createdAt: -1 });
+    const userDoc = await fetchUserDocument(req);
+    if (!userDoc) return res.status(401).json({ message: 'User not found in database.' });
+    const investments = await InvestmentPurchase.find({ userId: userDoc._id }).sort({ createdAt: -1 });
     res.json({ investments });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Unable to fetch investments.' });
@@ -548,8 +587,9 @@ app.get('/api/investments', requireUser, async (req, res) => {
 
 app.post('/api/investments/:id/proof', requireUser, async (req, res) => {
   try {
-    const userId = req.user._id || req.user.id;
-    const investment = await InvestmentPurchase.findOne({ _id: req.params.id, userId });
+    const userDoc = await fetchUserDocument(req);
+    if (!userDoc) return res.status(401).json({ message: 'User not found in database.' });
+    const investment = await InvestmentPurchase.findOne({ _id: req.params.id, userId: userDoc._id });
     if (!investment) return res.status(404).json({ message: 'Investment purchase not found.' });
 
     investment.proofData = req.body.proofData || '';
@@ -568,8 +608,9 @@ app.post('/api/investments/proof', requireUser, async (req, res) => {
     if (!investmentId || !proofData) {
       return res.status(400).json({ message: 'Investment ID and proof data are required.' });
     }
-    const userId = req.user._id || req.user.id;
-    const investment = await InvestmentPurchase.findOne({ _id: investmentId, userId });
+    const userDoc = await fetchUserDocument(req);
+    if (!userDoc) return res.status(401).json({ message: 'User not found in database.' });
+    const investment = await InvestmentPurchase.findOne({ _id: investmentId, userId: userDoc._id });
     if (!investment) return res.status(404).json({ message: 'Investment purchase not found.' });
 
     investment.proofData = proofData;
@@ -588,8 +629,9 @@ app.post('/api/investments/upload', requireUser, async (req, res) => {
     if (!investmentId || !proofData) {
       return res.status(400).json({ message: 'Investment ID and proof data are required.' });
     }
-    const userId = req.user._id || req.user.id;
-    const investment = await InvestmentPurchase.findOne({ _id: investmentId, userId });
+    const userDoc = await fetchUserDocument(req);
+    if (!userDoc) return res.status(401).json({ message: 'User not found in database.' });
+    const investment = await InvestmentPurchase.findOne({ _id: investmentId, userId: userDoc._id });
     if (!investment) return res.status(404).json({ message: 'Investment purchase not found.' });
 
     investment.proofData = proofData;
@@ -608,8 +650,9 @@ app.post('/api/investments/confirm', requireUser, async (req, res) => {
     if (!investmentId) {
       return res.status(400).json({ message: 'Investment ID is required.' });
     }
-    const userId = req.user._id || req.user.id;
-    const investment = await InvestmentPurchase.findOne({ _id: investmentId, userId });
+    const userDoc = await fetchUserDocument(req);
+    if (!userDoc) return res.status(401).json({ message: 'User not found in database.' });
+    const investment = await InvestmentPurchase.findOne({ _id: investmentId, userId: userDoc._id });
     if (!investment) return res.status(404).json({ message: 'Investment purchase not found.' });
 
     investment.status = 'pending';
