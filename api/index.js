@@ -172,7 +172,8 @@ async function registerUser(req, res) {
     });
     await user.save();
 
-    const token = signToken({ id: user._id, email: user.email });
+    const userIdStr = user._id.toString();
+    const token = signToken({ id: userIdStr, email: user.email }); // ID is safely stringified here
     res.cookie('token', token, {
       httpOnly: true,
       sameSite: 'lax',
@@ -226,7 +227,8 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid email or password' });
     }
 
-    const token = signToken({ id: user._id, email: user.email });
+    const userIdStr = user._id.toString();
+    const token = signToken({ id: userIdStr, email: user.email }); // ID is safely stringified here
     res.cookie('token', token, {
       httpOnly: true,
       sameSite: 'lax',
