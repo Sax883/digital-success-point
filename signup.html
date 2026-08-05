@@ -60,11 +60,9 @@
             localStorage.setItem('token', data.token);
             window.location.href = '/client/dashboard.html';
           } else {
-            localStorage.removeItem('token');
-            alert(data?.message || 'Signup failed');
+            alert(data.message || data.error || 'Signup failed');
           }
         } catch (error) {
-          localStorage.removeItem('token');
           alert('Signup failed. Please try again.');
         }
       });

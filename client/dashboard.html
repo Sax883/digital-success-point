@@ -261,8 +261,7 @@
       }
 
       function getAuthHeaders(extra = {}) {
-        let token = localStorage.getItem('token');
-        if (token === 'undefined' || token === 'null') token = null;
+        const token = getClientToken();
         return {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...extra,
@@ -302,6 +301,7 @@
       async function loadProfile() {
         const token = getClientToken();
         if (!token) {
+          window.location.href = '/login.html';
           return;
         }
 
