@@ -403,14 +403,13 @@
         loadProfile();
       });
 
-      async function loadProfile() {
-        const token = getClientToken();
+      async function loadProfile(token) {
         if (!token) {
           return;
         }
 
         try {
-          const response = await fetch('/api/auth/me', { credentials: 'include', headers: getAuthHeaders() });
+          const response = await fetch('/api/auth/me', { credentials: 'include', headers: { Authorization: `Bearer ${token}` } });
           if (response.status === 401) {
             window.location.href = '/login.html';
             return;
@@ -613,11 +612,10 @@
         renderTransactionHistory(transactions);
       }
 
-      async function validateAuth() {
-        const token = localStorage.getItem('token');
+      async function validateAuth(token) {
         if (!token || token === 'undefined' || token === 'null') return false;
         try {
-          const res = await fetch('/api/auth/me', { credentials: 'include', headers: getAuthHeaders() });
+          const res = await fetch('/api/auth/me', { credentials: 'include', headers: { Authorization: `Bearer ${token}` } });
           if (res.status === 401) {
             window.location.href = '/login.html';
             return false;
@@ -630,15 +628,17 @@
 
       document.addEventListener('DOMContentLoaded', async () => {
         const token = localStorage.getItem('token');
+        console.log('Dashboard loaded, token:', token);
         if (!token || token === 'undefined' || token === 'null') {
+          console.warn('No valid token');
           window.location.href = '/login.html';
           return;
         }
 
         renderTierGrid();
         setActiveTab('overview');
-        await validateAuth();
-        loadProfile();
+        await validateAuth(token);
+        loadProfile(token);
       });
     </script>
   </body>
