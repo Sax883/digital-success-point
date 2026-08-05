@@ -51,9 +51,8 @@
     <script>
       function getAdminToken() {
         const token = localStorage.getItem('adminToken');
-        if (!token || token === 'undefined') {
-          localStorage.removeItem('adminToken');
-          window.location.href = '/admin/login.html';
+        // Treat literal strings as missing; do not clear storage here to avoid loops.
+        if (token === null || token === 'undefined' || token === 'null') {
           return null;
         }
         return token;

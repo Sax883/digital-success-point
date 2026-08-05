@@ -253,9 +253,8 @@
 
       function getClientToken() {
         const token = localStorage.getItem('token');
-        // Only redirect if token is truly missing (null). Do not clear localStorage here.
-        if (token === null) {
-          window.location.href = '/login.html';
+        // Treat literal strings 'undefined' and 'null' as missing tokens.
+        if (token === null || token === 'undefined' || token === 'null') {
           return null;
         }
         return token;

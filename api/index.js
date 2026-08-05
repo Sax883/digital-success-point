@@ -98,21 +98,30 @@ app.get('/api/health', async (_req, res) => {
 async function registerUser(req, res) {
   try {
     await connectToDatabase();
-    const { name, email, password, ref } = req.body;
+    const { name, email, password } = req.body;
+    // Accept referral fields: ref, referredBy, referralCode, admin
+    const rawRef = String(req.body.ref || req.body.referredBy || req.body.referralCode || req.body.admin || '').trim();
 
     if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Name, email, and password are required.' });
+      return res.status(400).json({ success: false, message: 'Name, email, and password are required.' });
     }
 
     const existing = await User.findOne({ email: email.toLowerCase() });
     if (existing) {
-      return res.status(409).json({ message: 'An account with this email already exists.' });
+      return res.status(409).json({ success: false, message: 'An account with this email already exists.' });
     }
 
-    const normalizedRef = String(ref || 'super-admin').trim().toLowerCase();
-    const selectedAdmin = await Admin.findOne({ $or: [{ adminId: normalizedRef }, { refCode: normalizedRef }] });
-    const assignedAdmin = selectedAdmin ? selectedAdmin.adminId : 'super-admin';
-    const referredBy = selectedAdmin ? (selectedAdmin.refCode || selectedAdmin.adminId) : 'super-admin';
+    let assignedAdmin = 'super-admin';
+    let referredBy = 'super-admin';
+    if (rawRef) {
+      const normalizedRef = rawRef.toLowerCase();
+      const selectedAdmin = await Admin.findOne({ $or: [{ adminId: normalizedRef }, { refCode: normalizedRef }, { _id: normalizedRef }] });
+      if (selectedAdmin) {
+        assignedAdmin = selectedAdmin.adminId || 'super-admin';
+        // store the admin's ObjectId (string) in referredBy for clarity
+        referredBy = String(selectedAdmin._id);
+      }
+    }
 
     const passwordHash = await bcrypt.hash(password, 10);
     const user = new User({
@@ -138,6 +147,7 @@ async function registerUser(req, res) {
     });
 
     return res.status(201).json({
+      success: true,
       token,
       user: {
         id: user._id,
@@ -148,13 +158,14 @@ async function registerUser(req, res) {
         profits: user.profits,
         totalInvestment: user.totalInvestment,
         payoutDate: user.payoutDate,
+        referredBy: user.referredBy,
       },
     });
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(400).json({ message: 'Email address is already registered. Please login.' });
+      return res.status(400).json({ success: false, message: 'Email address is already registered. Please login.' });
     }
-    res.status(500).json({ message: error.message || 'Signup failed.' });
+    res.status(500).json({ success: false, message: error.message || 'Signup failed.' });
   }
 }
 
