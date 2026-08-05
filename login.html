@@ -44,7 +44,12 @@
           email,
           password: document.getElementById('password').value,
         };
-        const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
         console.log('Login status:', response.status);
         const data = await response.json();
         console.log('Login response:', data);

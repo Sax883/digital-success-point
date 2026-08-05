@@ -267,9 +267,26 @@
         const token = String(localStorage.getItem('token') || '').trim();
         return {
           'Content-Type': 'application/json',
-          ...(token && token !== 'undefined' && token !== 'null' ? { 'Authorization': `Bearer ${token}` } : {}),
+          ...(token && token !== 'undefined' && token !== 'null' ? { Authorization: `Bearer ${token}` } : {}),
           ...extra,
         };
+      }
+
+      const originalFetch = window.fetch.bind(window);
+      window.fetch = (url, options = {}) => {
+        return originalFetch(url, { credentials: 'include', ...options });
+      };
+
+      async function validateSession() {
+        try {
+          const response = await fetch('/api/auth/me', { method: 'GET', headers: getAuthHeaders() });
+          if (response.status === 401) {
+            return false;
+          }
+          return response.ok;
+        } catch (error) {
+          return false;
+        }
       }
 
       function openDrawer() {
@@ -296,10 +313,17 @@
         const token = String(localStorage.getItem('token') || '').trim();
         console.log('Dashboard initialized, token present:', !!token);
 
-        if (!token || token === 'undefined' || token === 'null' || token.length === 0) {
-          console.warn('No valid auth token found. Redirecting to login.');
+        const localTokenValid = token && token !== 'undefined' && token !== 'null';
+        const sessionValid = await validateSession();
+        if (!sessionValid) {
+          console.warn('No valid session found. Redirecting to login.');
+          localStorage.removeItem('token');
           window.location.href = '/login.html';
           return;
+        }
+
+        if (!localTokenValid) {
+          console.info('Server session is valid, but local storage token was missing or invalid. Continuing with cookie-based auth.');
         }
 
         // Navigation Bindings

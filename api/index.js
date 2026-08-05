@@ -1,4 +1,5 @@
 const path = require('path');
+const mongoose = require('mongoose');
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
@@ -27,17 +28,23 @@ function signToken(payload) {
   return jwt.sign(payload, secret, { expiresIn: '7d' });
 }
 
+function isSafeToken(value) {
+  const token = String(value || '').trim();
+  return token && token !== 'undefined' && token !== 'null';
+}
+
 function getBearerTokenFromHeader(req) {
   const authorization = req.get('authorization') || req.headers.authorization || req.headers.Authorization;
   if (!authorization || typeof authorization !== 'string') return null;
   const [scheme, token] = authorization.trim().split(/\s+/);
-  return /^Bearer$/i.test(scheme) ? token : authorization.trim();
+  const candidate = /^Bearer$/i.test(scheme) ? token : authorization.trim();
+  return isSafeToken(candidate) ? candidate : null;
 }
 
 function getToken(req) {
   const headerToken = getBearerTokenFromHeader(req);
   if (headerToken) return headerToken;
-  return req.cookies.token || null;
+  return isSafeToken(req.cookies?.token) ? req.cookies.token : null;
 }
 
 function getAdminToken(req) {
@@ -57,6 +64,18 @@ async function resolveAdminFromToken(token) {
   }
 }
 
+function normalizePayloadId(value) {
+  const raw = String(value || '').trim();
+  const objectIdMatch = raw.match(/^ObjectId\(['"]?([0-9a-fA-F]{24})['"]?\)$/);
+  if (objectIdMatch) {
+    return objectIdMatch[1];
+  }
+  if (mongoose.Types.ObjectId.isValid(raw)) {
+    return raw;
+  }
+  return '';
+}
+
 async function requireUser(req, res, next) {
   const token = getToken(req);
   if (!token) {
@@ -72,19 +91,21 @@ async function requireUser(req, res, next) {
       return res.status(401).json({ message: 'Invalid token payload.' });
     }
 
-    const normalizedUserId = userId ? String(userId).trim() : '';
+    const normalizedUserId = normalizePayloadId(userId);
     const normalizedEmail = userEmail ? String(userEmail).toLowerCase().trim() : '';
     await connectToDatabase();
 
+    const searchConditions = [];
+    if (normalizedUserId) {
+      searchConditions.push({ _id: normalizedUserId });
+    }
+    if (normalizedEmail) {
+      searchConditions.push({ email: normalizedEmail });
+    }
+
     let user = null;
-    if (normalizedUserId && /^[a-fA-F0-9]{24}$/.test(normalizedUserId)) {
-      user = await User.findById(normalizedUserId).select('-passwordHash -password');
-    }
-    if (!user && normalizedUserId) {
-      user = await User.findOne({ _id: normalizedUserId }).select('-passwordHash -password');
-    }
-    if (!user && normalizedEmail) {
-      user = await User.findOne({ email: normalizedEmail }).select('-passwordHash -password');
+    if (searchConditions.length > 0) {
+      user = await User.findOne({ $or: searchConditions }).select('-passwordHash -password');
     }
 
     if (!user) {
